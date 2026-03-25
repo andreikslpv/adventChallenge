@@ -9,11 +9,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+data class ChatSettings(
+    val systemPrompt: String = "",
+    val temperature: Float = 0.7f,
+    val maxCharacterCount: String = "",
+    val maxTokens: String = "",
+    val responseType: String = "text",
+    val stopWord: String = ""
+)
+
 data class ChatUiState(
     val messages: List<ChatMessage> = emptyList(),
     val isLoading: Boolean = false,
-    val systemPrompt: String = "",
-    val temperature: Float = 0.7f,
+    val settings: ChatSettings = ChatSettings(),
     val error: String? = null
 )
 
@@ -23,8 +31,8 @@ class ChatViewModel(
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
-    fun setSystemPrompt(prompt: String, temperature: Float = 0.7f) {
-        _uiState.value = _uiState.value.copy(systemPrompt = prompt, temperature = temperature)
+    fun updateSettings(settings: ChatSettings) {
+        _uiState.value = _uiState.value.copy(settings = settings)
     }
 
     fun sendMessage(userMessage: String) {
@@ -34,14 +42,20 @@ class ChatViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             val currentMessages = _uiState.value.messages.toMutableList()
+            val settings = _uiState.value.settings
 
             val messagesToSend = mutableListOf<ChatMessage>()
 
-            if (_uiState.value.systemPrompt.isNotBlank()) {
+            var systemPrompt = settings.systemPrompt
+            if (settings.maxCharacterCount.isNotBlank()) {
+                systemPrompt += "\nМаксимальная длина ответа: ${settings.maxCharacterCount} символов."
+            }
+
+            if (systemPrompt.isNotBlank()) {
                 messagesToSend.add(
                     ChatMessage(
                         role = "system",
-                        content = _uiState.value.systemPrompt
+                        content = systemPrompt
                     )
                 )
             }
@@ -52,11 +66,24 @@ class ChatViewModel(
             currentMessages.add(ChatMessage(role = "user", content = userMessage))
             _uiState.value = _uiState.value.copy(messages = currentMessages)
 
-            val result = apiService.sendMessage(messagesToSend, _uiState.value.temperature)
+            val maxTokens = settings.maxTokens.toIntOrNull()
+            val responseType = if (settings.responseType == "json") "json_object" else "text"
+            val stopWord = settings.stopWord.takeIf { it.isNotBlank() }
+
+            val result = apiService.sendMessage(
+                messages = messagesToSend,
+                temperature = settings.temperature,
+                maxTokens = maxTokens,
+                responseType = responseType,
+                stopWord = stopWord
+            )
 
             result.fold(
-                onSuccess = { response ->
-                    val updatedMessages = currentMessages + response
+                onSuccess = { (message, tokenCount) ->
+                    val updatedMessages = currentMessages + message.copy(
+                        characterCount = message.content.length,
+                        tokenCount = tokenCount
+                    )
                     _uiState.value = _uiState.value.copy(
                         messages = updatedMessages,
                         isLoading = false

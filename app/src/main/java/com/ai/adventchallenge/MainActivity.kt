@@ -1,6 +1,5 @@
 package com.ai.adventchallenge
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,7 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.ai.adventchallenge.ui.ChatScreen
-import com.ai.adventchallenge.ui.SystemPromptDialog
+import com.ai.adventchallenge.ui.SettingsScreen
 import com.ai.adventchallenge.ui.theme.AdventChallengeTheme
 import com.ai.adventchallenge.viewmodel.ChatViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -35,12 +34,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: ChatViewModel = koinViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
-    var showSystemPromptDialog by remember { mutableStateOf(uiState.systemPrompt.isEmpty()) }
+    var showSettings by remember { mutableStateOf(uiState.settings.systemPrompt.isEmpty()) }
     var showError by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -61,24 +59,25 @@ fun MainScreen(viewModel: ChatViewModel = koinViewModel()) {
         }
     }
 
-    if (showSystemPromptDialog) {
-        SystemPromptDialog(
-            onDismiss = { showSystemPromptDialog = false },
-            onConfirm = { prompt, temperature ->
-                viewModel.setSystemPrompt(prompt, temperature)
-                showSystemPromptDialog = false
+    if (showSettings) {
+        SettingsScreen(
+            settings = uiState.settings,
+            onBack = { showSettings = false },
+            onSave = { settings ->
+                viewModel.updateSettings(settings)
+                showSettings = false
             }
         )
-    }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) {
-        ChatScreen(
-            messages = uiState.messages,
-            isLoading = uiState.isLoading,
-            onSendMessage = { viewModel.sendMessage(it) },
-            onOpenSystemPrompt = { showSystemPromptDialog = true }
-        )
+    } else {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) {
+            ChatScreen(
+                messages = uiState.messages,
+                isLoading = uiState.isLoading,
+                onSendMessage = { viewModel.sendMessage(it) },
+                onOpenSystemPrompt = { showSettings = true }
+            )
+        }
     }
 }

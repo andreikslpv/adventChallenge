@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ai.adventchallenge.api.dtos.ChatMessage
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,12 +135,24 @@ fun ChatScreen(
     }
 }
 
+private val json = Json { prettyPrint = true }
+
 @Composable
 fun MessageBubble(message: ChatMessage) {
     val isUser = message.role == "user"
     val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
     val color = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
     val contentColor = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+    val prettyJson = remember(message.content) {
+        try {
+            json.parseToJsonElement(message.content).toString()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val displayContent = prettyJson ?: message.content
 
     Box(
         modifier = Modifier.fillMaxWidth(),
@@ -150,11 +163,35 @@ fun MessageBubble(message: ChatMessage) {
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier.widthIn(max = 300.dp)
         ) {
-            Text(
-                text = message.content,
-                color = contentColor,
+            Column(
                 modifier = Modifier.padding(12.dp)
-            )
+            ) {
+                Text(
+                    text = displayContent,
+                    color = contentColor
+                )
+                if (!isUser && (message.characterCount > 0 || message.tokenCount > 0)) {
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (message.characterCount > 0) {
+                            Text(
+                                text = "${message.characterCount} символов",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = contentColor.copy(alpha = 0.7f)
+                            )
+                        }
+                        if (message.tokenCount > 0) {
+                            Text(
+                                text = "${message.tokenCount} токенов",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = contentColor.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
