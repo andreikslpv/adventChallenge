@@ -41,6 +41,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -70,6 +72,7 @@ fun ChatScreen(
     messages: List<ChatMessage>,
     isLoading: Boolean,
     isSendingToAll: Boolean,
+    snackbarHostState: SnackbarHostState,
     onSelectAgent: (String) -> Unit,
     onAddAgent: () -> Unit,
     onRemoveAgent: (String) -> Unit,
@@ -84,6 +87,7 @@ fun ChatScreen(
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("AI Чат") },
