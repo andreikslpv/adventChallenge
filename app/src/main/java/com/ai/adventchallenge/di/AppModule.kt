@@ -40,8 +40,8 @@ val appModule = module {
 
             install(HttpTimeout) {
                 connectTimeoutMillis = 30000
-                requestTimeoutMillis = 60000
-                socketTimeoutMillis = 60000
+                requestTimeoutMillis = 120000
+                socketTimeoutMillis = 120000
             }
 
             defaultRequest {

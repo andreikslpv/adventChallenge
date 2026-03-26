@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen(viewModel: ChatViewModel = koinViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
-    var showSettings by remember { mutableStateOf(uiState.settings.systemPrompt.isEmpty()) }
+    var showSettings by remember { mutableStateOf<String?>(null) }
     var showError by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -59,24 +59,35 @@ fun MainScreen(viewModel: ChatViewModel = koinViewModel()) {
         }
     }
 
-    if (showSettings) {
-        SettingsScreen(
-            settings = uiState.settings,
-            onBack = { showSettings = false },
-            onSave = { settings ->
-                viewModel.updateSettings(settings)
-                showSettings = false
-            }
-        )
+    if (showSettings != null) {
+        val agent = uiState.agents.find { it.id == showSettings }
+        if (agent != null) {
+            SettingsScreen(
+                settings = agent.settings,
+                onBack = { showSettings = null },
+                onSave = { settings ->
+                    viewModel.updateAgentSettings(showSettings!!, settings)
+                    showSettings = null
+                }
+            )
+        }
     } else {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) {
             ChatScreen(
+                agents = uiState.agents,
+                selectedAgentId = uiState.selectedAgentId,
                 messages = uiState.messages,
                 isLoading = uiState.isLoading,
+                isSendingToAll = uiState.isSendingToAll,
+                onSelectAgent = { viewModel.selectAgent(it) },
+                onAddAgent = { viewModel.addAgent() },
+                onRemoveAgent = { viewModel.removeAgent(it) },
+                onOpenSettings = { showSettings = it },
                 onSendMessage = { viewModel.sendMessage(it) },
-                onOpenSystemPrompt = { showSettings = true }
+                onSendToAll = { viewModel.sendMessageToAll(it) },
+                onClearSession = { viewModel.clearSession() }
             )
         }
     }

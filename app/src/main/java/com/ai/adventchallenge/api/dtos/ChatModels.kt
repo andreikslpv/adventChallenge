@@ -3,10 +3,16 @@ package com.ai.adventchallenge.api.dtos
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+import kotlinx.serialization.Transient
+
 @Serializable
 data class ChatMessage(
     val role: String,
     val content: String,
+    @Transient
+    val systemPrompt: String = "",
+    @Transient
+    val agentId: String = "",
     val characterCount: Int = 0,
     val tokenCount: Int = 0
 )
