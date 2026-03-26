@@ -1,6 +1,10 @@
 package com.ai.adventchallenge.ui
 
+import android.content.ClipboardManager
+import android.content.Context
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.adventchallenge.api.dtos.ChatMessage
@@ -127,7 +132,15 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(messages) { message ->
-                    MessageBubble(message = message)
+                    val clipboardManager = LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    MessageBubble(
+                        message = message,
+                        onLongPress = { text ->
+                            android.content.ClipData.newPlainText("message", text).let { clip ->
+                                clipboardManager.setPrimaryClip(clip)
+                            }
+                        }
+                    )
                 }
                 if (isLoading || isSendingToAll) {
                     item {
@@ -314,8 +327,9 @@ fun AddAgentButton(onAdd: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MessageBubble(message: ChatMessage) {
+fun MessageBubble(message: ChatMessage, onLongPress: (String) -> Unit) {
     val isUser = message.role == "user"
     val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
     val color = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
@@ -338,7 +352,12 @@ fun MessageBubble(message: ChatMessage) {
         Surface(
             color = color,
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.widthIn(max = 300.dp)
+            modifier = Modifier
+                .widthIn(max = 300.dp)
+                .combinedClickable(
+                    onClick = { },
+                    onLongClick = { onLongPress(displayContent) }
+                )
         ) {
             Column(
                 modifier = Modifier.padding(12.dp)
