@@ -30,7 +30,7 @@ data class ResponseFormat(
 @Serializable
 data class ChatRequest(
     val messages: List<ChatMessage>,
-    val model: String = "glm-4.7-flashx",
+    val model: String = "glm-4.7",
     val temperature: Float = 0.7f,
     val thinking: Thinking = Thinking(),
     @SerialName("max_tokens")

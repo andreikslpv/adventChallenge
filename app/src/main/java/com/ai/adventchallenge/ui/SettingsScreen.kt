@@ -90,11 +90,11 @@ fun SettingsScreen(
                 Slider(
                     value = temperature,
                     onValueChange = { temperature = it },
-                    valueRange = 0f..2f,
-                    steps = 19
+                    valueRange = 0f..1f,
+                    steps = 9
                 )
                 Text(
-                    text = "0.0 - более консервативный, 2.0 - более креативный",
+                    text = "0.0 - более консервативный, 1.0 - более креативный",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
