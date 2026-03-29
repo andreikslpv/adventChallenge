@@ -17,25 +17,8 @@ kotlin {
         implementation(projects.shared)
         implementation(libs.androidx.activity.compose)
         implementation(libs.compose.uiToolingPreview)
-
-//        // Koin
-//        implementation(project.dependencies.platform(libs.koin.bom))
-//        implementation(libs.koin.android)
-//        implementation(libs.koin.androidx.compose)
     }
 }
-
-val zaiApiKey: String = providers
-    .fileContents(rootProject.layout.projectDirectory.file("local.properties"))
-    .asText
-    .map { text ->
-        text.lines()
-            .firstOrNull { it.startsWith("zaiApiKey=") }
-            ?.substringAfter("=")
-            ?.trim()
-            ?: ""
-    }
-    .get()
 
 android {
     namespace = "com.ai.adventchallenge"
@@ -57,10 +40,8 @@ android {
     }
     buildTypes {
         debug {
-            buildConfigField("String", "API_KEY", "\"$zaiApiKey\"")
         }
         getByName("release") {
-            buildConfigField("String", "API_KEY", "\"$zaiApiKey\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

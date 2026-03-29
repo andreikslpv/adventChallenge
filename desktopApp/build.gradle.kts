@@ -12,10 +12,6 @@ kotlin {
 
         implementation(compose.desktop.currentOs)
         implementation(libs.kotlinx.coroutinesSwing)
-        implementation(libs.koin.core)
-        implementation(libs.koin.compose)
-        implementation(libs.androidx.lifecycle.viewmodelCompose)
-        implementation(libs.ktor.client.okhttp)
     }
 }
 

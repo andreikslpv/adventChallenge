@@ -5,7 +5,7 @@ import com.ai.adventchallenge.api.dtos.ChatRequest
 import com.ai.adventchallenge.api.dtos.ChatResponse
 import com.ai.adventchallenge.api.dtos.ErrorResponse
 import com.ai.adventchallenge.api.dtos.ResponseFormat
-import com.ai.adventchallenge.platform.ApiKeyProvider
+import com.ai.adventchallenge.config.BuildKonfig
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
@@ -15,8 +15,7 @@ import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 
 class ZaiApiService(
-    private val client: HttpClient,
-    private val apiKeyProvider: ApiKeyProvider
+    private val client: HttpClient
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -49,7 +48,7 @@ class ZaiApiService(
             }
 
             val response = client.post("https://api.z.ai/api/paas/v4/chat/completions") {
-                bearerAuth(apiKeyProvider.getApiKey())
+                bearerAuth(BuildKonfig.ZAI_API_KEY)
                 setBody(requestBody)
             }
 
@@ -58,7 +57,8 @@ class ZaiApiService(
             if (response.status.value !in 200..299) {
                 val errorMessage = try {
                     val errorResponse = json.decodeFromString<ErrorResponse>(responseBody)
-                    errorResponse.error?.message ?: "API error: ${response.status.value} ${response.status.description}"
+                    errorResponse.error?.message
+                        ?: "API error: ${response.status.value} ${response.status.description}"
                 } catch (_: Exception) {
                     "API error: ${response.status.value} ${response.status.description}"
                 }

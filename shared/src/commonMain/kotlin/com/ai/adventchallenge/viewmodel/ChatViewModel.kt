@@ -20,20 +20,14 @@ data class ChatSettings(
     val stopWord: String = ""
 )
 
+@OptIn(ExperimentalUuidApi::class)
 data class Agent(
-    val id: String,
+    val id: String = Uuid.random().toString(),
     val settings: ChatSettings = ChatSettings()
-) {
-    companion object {
-        @OptIn(ExperimentalUuidApi::class)
-        fun create() = Agent(
-            id = Uuid.random().toString()
-        )
-    }
-}
+)
 
 data class ChatUiState(
-    val agents: List<Agent> = listOf(Agent.create()),
+    val agents: List<Agent> = listOf(Agent()),
     val selectedAgentId: String = "",
     val messages: List<ChatMessage> = emptyList(),
     val isLoading: Boolean = false,
@@ -46,7 +40,7 @@ class ChatViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         ChatUiState(
-            agents = listOf(Agent.create()),
+            agents = listOf(Agent()),
             selectedAgentId = ""
         )
     )
@@ -57,7 +51,7 @@ class ChatViewModel(
     }
 
     fun addAgent() {
-        val newAgent = Agent.create()
+        val newAgent = Agent()
         _uiState.value = _uiState.value.copy(agents = _uiState.value.agents + newAgent)
     }
 

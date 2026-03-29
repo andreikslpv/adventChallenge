@@ -7,13 +7,28 @@ import java.util.Properties
 actual class ApiKeyProvider {
     actual fun getApiKey(): String {
         val properties = Properties()
-        val localPropertiesFile = File("local.properties")
+        // Try multiple possible locations for local.properties
+        val possiblePaths = listOf(
+            "local.properties",
+            "../local.properties",
+            "../../local.properties"
+        )
         
-        if (localPropertiesFile.exists()) {
-            FileInputStream(localPropertiesFile).use { stream ->
-                properties.load(stream)
+        for (path in possiblePaths) {
+            val file = File(path)
+            if (file.exists()) {
+                try {
+                    FileInputStream(file).use { stream ->
+                        properties.load(stream)
+                    }
+                    val apiKey = properties.getProperty("zaiApiKey", "")
+                    if (apiKey.isNotBlank()) {
+                        return apiKey
+                    }
+                } catch (e: Exception) {
+                    // Continue to next path
+                }
             }
-            return properties.getProperty("zaiApiKey", "")
         }
         
         return ""

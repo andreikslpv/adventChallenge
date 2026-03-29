@@ -28,7 +28,7 @@ fun initKoin() {
 val appModule = module {
     single { createHttpClient() }
     single { ApiKeyProvider() }
-    single { ZaiApiService(get(), get()) }
+    single { ZaiApiService(get()) }
     single { ChatViewModel(get()) }
 }
 
