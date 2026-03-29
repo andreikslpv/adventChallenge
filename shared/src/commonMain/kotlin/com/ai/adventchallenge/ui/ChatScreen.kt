@@ -40,16 +40,6 @@ import androidx.compose.ui.unit.dp
 import com.ai.adventchallenge.viewmodel.Agent
 import com.ai.adventchallenge.viewmodel.ChatViewModel
 
-@Composable
-fun AppTheme(
-    content: @Composable () -> Unit
-) {
-    MaterialTheme(
-        colorScheme = MaterialTheme.colorScheme,
-        content = content
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(

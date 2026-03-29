@@ -16,12 +16,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
-fun initKoin(): KoinApplication {
-    return startKoin {
+fun initKoin() {
+    startKoin {
         modules(appModule)
     }
 }
