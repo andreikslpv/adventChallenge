@@ -44,7 +44,6 @@ fun createHttpClient(): HttpClient {
         }
 
         install(Logging) {
-            //level = if (BuildConfig.DEBUG) LogLevel.ALL else LogLevel.NONE
             level = LogLevel.ALL
             logger = Logger.SIMPLE
         }

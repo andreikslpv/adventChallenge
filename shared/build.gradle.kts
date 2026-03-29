@@ -60,8 +60,23 @@ kotlin {
 
         testImplementation(libs.kotlin.test)
     }
-}
 
-dependencies {
-    androidRuntimeClasspath(libs.compose.uiTooling)
+    sourceSets {
+        val commonMain by getting
+        val androidMain by getting
+        val jvmMain by getting
+        val jsMain by getting
+
+        androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+        }
+
+        jvmMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+        }
+
+        jsMain.dependencies {
+            implementation(libs.ktor.client.js)
+        }
+    }
 }
