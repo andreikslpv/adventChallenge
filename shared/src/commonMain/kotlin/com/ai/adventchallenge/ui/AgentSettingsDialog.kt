@@ -1,145 +1,236 @@
 package com.ai.adventchallenge.ui
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.ai.adventchallenge.viewmodel.Agent
 import com.ai.adventchallenge.viewmodel.ChatSettings
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgentSettingsDialog(
     agent: Agent,
     onDismiss: () -> Unit,
     onSettingsChanged: (ChatSettings) -> Unit
 ) {
-    var systemPrompt by remember { mutableStateOf(agent.settings.systemPrompt) }
-    var temperature by remember { mutableStateOf(agent.settings.temperature.toString()) }
-    var maxCharacterCount by remember { mutableStateOf(agent.settings.maxCharacterCount) }
-    var maxTokens by remember { mutableStateOf(agent.settings.maxTokens) }
-    var responseType by remember { mutableStateOf(agent.settings.responseType) }
-    var stopWord by remember { mutableStateOf(agent.settings.stopWord) }
-
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text("Настройки агента") },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = systemPrompt,
-                    onValueChange = { systemPrompt = it },
-                    label = { Text("Системный промпт") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 5
-                )
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        var systemPrompt by remember { mutableStateOf(agent.settings.systemPrompt) }
+        var temperature by remember { mutableFloatStateOf(agent.settings.temperature) }
+        var maxCharacterCount by remember { mutableStateOf(agent.settings.maxCharacterCount) }
+        var maxTokens by remember { mutableStateOf(agent.settings.maxTokens) }
+        var responseType by remember { mutableStateOf(agent.settings.responseType) }
+        var stopWord by remember { mutableStateOf(agent.settings.stopWord) }
+        var maxTokensError by remember { mutableStateOf<String?>(null) }
 
-                OutlinedTextField(
-                    value = temperature,
-                    onValueChange = {
-                        if (it.isEmpty() || it.toFloatOrNull() != null) {
-                            temperature = it
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            tonalElevation = 8.dp
+        ) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Настройки") },
+                        navigationIcon = {
+                            IconButton(onClick = onDismiss) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Назад"
+                                )
+                            }
                         }
-                    },
-                    label = { Text("Температура (0.0-2.0)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = maxCharacterCount,
-                    onValueChange = {
-                        if (it.isEmpty() || it.toIntOrNull() != null) {
-                            maxCharacterCount = it
-                        }
-                    },
-                    label = { Text("Макс. символов (опционально)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = maxTokens,
-                    onValueChange = {
-                        if (it.isEmpty() || it.toIntOrNull() != null) {
-                            maxTokens = it
-                        }
-                    },
-                    label = { Text("Макс. токенов (1-8192, опционально)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    )
+                }
+            ) { padding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(padding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("Тип ответа:")
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = responseType == "text",
-                                onClick = { responseType = "text" }
-                            )
-                            Text("Текст")
+                    OutlinedTextField(
+                        value = systemPrompt,
+                        onValueChange = { systemPrompt = it },
+                        label = { Text("Системный промпт") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        maxLines = 10
+                    )
+
+                    Column {
+                        Text(
+                            text = "Температура: ${temperature.format(2)}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Slider(
+                            value = temperature,
+                            onValueChange = { temperature = it },
+                            valueRange = 0f..1f,
+                            steps = 9
+                        )
+                        Text(
+                            text = "0.0 - более консервативный, 1.0 - более креативный",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = maxCharacterCount,
+                        onValueChange = {
+                            if (it.isEmpty() || it.all { char -> char.isDigit() }) {
+                                maxCharacterCount = it
+                            }
+                        },
+                        label = { Text("Максимальная длина ответа в символах") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        supportingText = { Text("Оставьте пустым, чтобы не ограничивать") }
+                    )
+
+                    OutlinedTextField(
+                        value = maxTokens,
+                        onValueChange = { input ->
+                            if (input.isEmpty() || input.all { char -> char.isDigit() }) {
+                                maxTokens = input
+                                maxTokensError = null
+                            }
+                        },
+                        label = { Text("Максимальная длина ответа в токенах") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        isError = maxTokensError != null,
+                        supportingText = {
+                            if (maxTokensError != null) {
+                                Text(maxTokensError!!, color = MaterialTheme.colorScheme.error)
+                            } else {
+                                Text("Оставьте пустым, чтобы не ограничивать (диапазон: 1-8192)")
+                            }
                         }
+                    )
+
+                    Column {
+                        Text(
+                            text = "Тип ответа",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                         Row(
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            RadioButton(
-                                selected = responseType == "json",
-                                onClick = { responseType = "json" }
-                            )
-                            Text("JSON")
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = responseType == "text",
+                                    onClick = { responseType = "text" }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Текст")
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = responseType == "json",
+                                    onClick = { responseType = "json" }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("JSON")
+                            }
                         }
                     }
-                }
 
-                OutlinedTextField(
-                    value = stopWord,
-                    onValueChange = { stopWord = it },
-                    label = { Text("Стоп слово (опционально)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onSettingsChanged(
-                        ChatSettings(
-                            systemPrompt = systemPrompt,
-                            temperature = temperature.toFloatOrNull() ?: 0.7f,
-                            maxCharacterCount = maxCharacterCount,
-                            maxTokens = maxTokens,
-                            responseType = responseType,
-                            stopWord = stopWord
-                        )
+                    OutlinedTextField(
+                        value = stopWord,
+                        onValueChange = { stopWord = it },
+                        label = { Text("Стоп слово") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        supportingText = { Text("Оставьте пустым, чтобы не использовать") }
                     )
-                    onDismiss()
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            val tokenCount = maxTokens.toIntOrNull()
+                            if (tokenCount != null && (tokenCount !in 1..8192)) {
+                                maxTokensError = "Значение должно быть от 1 до 8192"
+                            } else {
+                                onSettingsChanged(
+                                    ChatSettings(
+                                        systemPrompt = systemPrompt,
+                                        temperature = temperature,
+                                        maxCharacterCount = maxCharacterCount,
+                                        maxTokens = maxTokens,
+                                        responseType = responseType,
+                                        stopWord = stopWord
+                                    )
+                                )
+                                onDismiss()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Сохранить")
+                    }
                 }
-            ) {
-                Text("Сохранить")
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text("Отмена")
             }
         }
-    )
+    }
+}
+
+fun Float.format(decimals: Int): String {
+    val s = this.toString()
+
+    val separatorIndex = s.indexOfAny(charArrayOf('.', ','))
+    if (separatorIndex == -1) return s
+
+    val endIndex = (separatorIndex + 1 + decimals).coerceAtMost(s.length)
+    return s.substring(0, endIndex)
 }
