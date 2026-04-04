@@ -31,6 +31,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ai.adventchallenge.platform.copyToClipboard
+import com.ai.adventchallenge.platform.getClipboardContext
 import com.ai.adventchallenge.ui.components.AgentsRow
 import com.ai.adventchallenge.ui.components.MessageBubble
 import com.ai.adventchallenge.viewmodel.Agent
@@ -46,6 +48,7 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     var inputText by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = getClipboardContext()
 
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
@@ -146,7 +149,9 @@ fun ChatScreen(
                         MessageBubble(
                             message = message,
                             agent = uiState.agents.find { it.id == message.agentId },
-                            onLongPress = {}
+                            onLongPress = { text ->
+                                copyToClipboard(text, context)
+                            }
                         )
                     }
                 }
