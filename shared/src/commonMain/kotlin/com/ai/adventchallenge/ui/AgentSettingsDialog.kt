@@ -1,6 +1,7 @@
 package com.ai.adventchallenge.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ai.adventchallenge.api.AIModel
 import com.ai.adventchallenge.viewmodel.Agent
 import com.ai.adventchallenge.viewmodel.ChatSettings
 
@@ -55,7 +57,7 @@ fun AgentSettingsDialog(
     ) {
         var systemPrompt by remember { mutableStateOf(agent.settings.systemPrompt) }
         var temperature by remember { mutableFloatStateOf(agent.settings.temperature) }
-        var maxCharacterCount by remember { mutableStateOf(agent.settings.maxCharacterCount) }
+        var selectedModel by remember { mutableStateOf(agent.settings.selectedModel) }
         var maxTokens by remember { mutableStateOf(agent.settings.maxTokens) }
         var responseType by remember { mutableStateOf(agent.settings.responseType) }
         var stopWord by remember { mutableStateOf(agent.settings.stopWord) }
@@ -117,19 +119,27 @@ fun AgentSettingsDialog(
                         )
                     }
 
-                    OutlinedTextField(
-                        value = maxCharacterCount,
-                        onValueChange = {
-                            if (it.isEmpty() || it.all { char -> char.isDigit() }) {
-                                maxCharacterCount = it
+                    Column {
+                        Text(
+                            text = "Модель ИИ",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        AIModel.AVAILABLE_MODELS.forEach { model ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedModel = model },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedModel == model,
+                                    onClick = { selectedModel = model }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(model.displayName)
                             }
-                        },
-                        label = { Text("Максимальная длина ответа в символах") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        supportingText = { Text("Оставьте пустым, чтобы не ограничивать") }
-                    )
+                        }
+                    }
 
                     OutlinedTextField(
                         value = maxTokens,
@@ -206,7 +216,7 @@ fun AgentSettingsDialog(
                                     ChatSettings(
                                         systemPrompt = systemPrompt,
                                         temperature = temperature,
-                                        maxCharacterCount = maxCharacterCount,
+                                        selectedModel = selectedModel,
                                         maxTokens = maxTokens,
                                         responseType = responseType,
                                         stopWord = stopWord

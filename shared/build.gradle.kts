@@ -21,12 +21,14 @@ val localProperties = Properties().apply {
     }
 }
 val zaiApiKey = localProperties.getProperty("zaiApiKey") ?: ""
+val openaiApiKey = localProperties.getProperty("openaiApiKey") ?: ""
 
 buildkonfig {
     packageName = "com.ai.adventchallenge.config"
 
     defaultConfigs {
         buildConfigField(Type.STRING, "ZAI_API_KEY", zaiApiKey)
+        buildConfigField(Type.STRING, "OPENAI_API_KEY", openaiApiKey)
     }
 }
 

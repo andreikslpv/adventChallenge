@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -54,51 +55,61 @@ fun MessageBubble(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = alignment
     ) {
-        Surface(
-            color = color,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier
-                .widthIn(max = 300.dp)
-                .combinedClickable(
-                    onClick = { },
-                    onLongClick = { onLongPress(displayContent) }
-                )
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
-            ) {
-                if (!isUser && message.systemPrompt.isNotEmpty()) {
-                    Text(
-                        text = "${message.systemPrompt}:",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = contentColor.copy(alpha = 0.8f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+        BoxWithConstraints {
+            val maxWidth = maxWidth * 2 / 3
+            val modelName = agent?.settings?.selectedModel?.modelName ?: ""
+            val systemPromptText = if (modelName.isNotEmpty()) {
+                "$modelName: ${message.systemPrompt}"
+            } else {
+                message.systemPrompt
+            }
+
+            Surface(
+                color = color,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .widthIn(max = maxWidth)
+                    .combinedClickable(
+                        onClick = { },
+                        onLongClick = { onLongPress(displayContent) }
                     )
-                    Spacer(modifier = Modifier.size(4.dp))
-                }
-                Text(
-                    text = displayContent,
-                    color = contentColor
-                )
-                if (!isUser && (message.characterCount > 0 || message.tokenCount > 0)) {
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        if (message.characterCount > 0) {
-                            Text(
-                                text = "${message.characterCount} символов",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor.copy(alpha = 0.7f)
-                            )
-                        }
-                        if (message.tokenCount > 0) {
-                            Text(
-                                text = "${message.tokenCount} токенов",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor.copy(alpha = 0.7f)
-                            )
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    if (!isUser && systemPromptText.isNotEmpty()) {
+                        Text(
+                            text = "$systemPromptText:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = contentColor.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                    }
+                    Text(
+                        text = displayContent,
+                        color = contentColor
+                    )
+                    if (!isUser && (message.characterCount > 0 || message.tokenCount > 0)) {
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            if (message.characterCount > 0) {
+                                Text(
+                                    text = "${message.characterCount} символов",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = contentColor.copy(alpha = 0.7f)
+                                )
+                            }
+                            if (message.tokenCount > 0) {
+                                Text(
+                                    text = "${message.tokenCount} токенов",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = contentColor.copy(alpha = 0.7f)
+                                )
+                            }
                         }
                     }
                 }

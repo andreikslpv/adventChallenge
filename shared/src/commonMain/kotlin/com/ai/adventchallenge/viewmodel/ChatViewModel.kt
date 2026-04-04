@@ -2,6 +2,7 @@ package com.ai.adventchallenge.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ai.adventchallenge.api.AIModel
 import com.ai.adventchallenge.api.ZaiApiService
 import com.ai.adventchallenge.api.dtos.ChatMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +15,7 @@ import kotlin.uuid.Uuid
 data class ChatSettings(
     val systemPrompt: String = "",
     val temperature: Float = 0.7f,
-    val maxCharacterCount: String = "",
+    val selectedModel: AIModel = AIModel.AVAILABLE_MODELS[1],
     val maxTokens: String = "",
     val responseType: String = "text",
     val stopWord: String = ""
@@ -112,33 +113,28 @@ class ChatViewModel(
     }
 
     private fun sendMessageToAgent(userMessage: String, agent: Agent) {
+        val currentMessages = _uiState.value.messages.toMutableList()
+        currentMessages.add(ChatMessage(role = "user", content = userMessage))
+        _uiState.value = _uiState.value.copy(messages = currentMessages)
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            val currentMessages = _uiState.value.messages.toMutableList()
             val settings = agent.settings
 
             val messagesToSend = mutableListOf<ChatMessage>()
 
-            var systemPrompt = settings.systemPrompt
-            if (settings.maxCharacterCount.isNotBlank()) {
-                systemPrompt += "\nМаксимальная длина ответа: ${settings.maxCharacterCount} символов."
-            }
-
-            if (systemPrompt.isNotBlank()) {
+            if (settings.systemPrompt.isNotBlank()) {
                 messagesToSend.add(
                     ChatMessage(
                         role = "system",
-                        content = systemPrompt
+                        content = settings.systemPrompt
                     )
                 )
             }
 
-            messagesToSend.addAll(currentMessages)
+            messagesToSend.addAll(_uiState.value.messages.filter { it.role != "user" || it.content != userMessage })
             messagesToSend.add(ChatMessage(role = "user", content = userMessage))
-
-            currentMessages.add(ChatMessage(role = "user", content = userMessage))
-            _uiState.value = _uiState.value.copy(messages = currentMessages)
 
             val maxTokens = settings.maxTokens.toIntOrNull()
             val responseType = if (settings.responseType == "json") "json_object" else "text"
@@ -149,7 +145,8 @@ class ChatViewModel(
                 temperature = settings.temperature,
                 maxTokens = maxTokens,
                 responseType = responseType,
-                stopWord = stopWord
+                stopWord = stopWord,
+                model = settings.selectedModel
             )
 
             result.fold(
@@ -160,7 +157,7 @@ class ChatViewModel(
                         characterCount = message.content.length,
                         tokenCount = tokenCount
                     )
-                    val updatedMessages = currentMessages + messageWithAgentInfo
+                    val updatedMessages = _uiState.value.messages + messageWithAgentInfo
                     _uiState.value = _uiState.value.copy(
                         messages = updatedMessages,
                         isLoading = false
@@ -180,16 +177,11 @@ class ChatViewModel(
         val settings = agent.settings
         val messagesToSend = mutableListOf<ChatMessage>()
 
-        var systemPrompt = settings.systemPrompt
-        if (settings.maxCharacterCount.isNotBlank()) {
-            systemPrompt += "\nМаксимальная длина ответа: ${settings.maxCharacterCount} символов."
-        }
-
-        if (systemPrompt.isNotBlank()) {
+        if (settings.systemPrompt.isNotBlank()) {
             messagesToSend.add(
                 ChatMessage(
                     role = "system",
-                    content = systemPrompt
+                    content = settings.systemPrompt
                 )
             )
         }
@@ -206,7 +198,8 @@ class ChatViewModel(
             temperature = settings.temperature,
             maxTokens = maxTokens,
             responseType = responseType,
-            stopWord = stopWord
+            stopWord = stopWord,
+            model = settings.selectedModel
         )
 
         result.fold(

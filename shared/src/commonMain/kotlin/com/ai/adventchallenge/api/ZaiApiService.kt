@@ -8,6 +8,7 @@ import com.ai.adventchallenge.api.dtos.ResponseFormat
 import com.ai.adventchallenge.config.BuildKonfig
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -29,12 +30,14 @@ class ZaiApiService(
         temperature: Float = 0.7f,
         maxTokens: Int? = null,
         responseType: String = "text",
-        stopWord: String? = null
+        stopWord: String? = null,
+        model: AIModel = AIModel.AVAILABLE_MODELS[1]
     ): Result<Pair<ChatMessage, Int>> {
         return try {
             val requestBuilder = ChatRequest(
                 messages = messages,
-                temperature = temperature
+                temperature = temperature,
+                model = model.modelName
             )
 
             val requestBody = if (maxTokens != null || responseType != "text" || stopWord != null) {
@@ -47,8 +50,16 @@ class ZaiApiService(
                 requestBuilder
             }
 
-            val response = client.post("https://api.z.ai/api/paas/v4/chat/completions") {
-                bearerAuth(BuildKonfig.ZAI_API_KEY)
+            val apiKey = when (model.provider) {
+                AIProvider.ZAI -> BuildKonfig.ZAI_API_KEY
+                AIProvider.OPENAI -> BuildKonfig.OPENAI_API_KEY
+            }
+
+            val response = client.post(model.provider.baseUrl) {
+                when (model.provider.apiKeyHeaderName) {
+                    "Authorization" -> bearerAuth(apiKey)
+                    else -> header(model.provider.apiKeyHeaderName, apiKey)
+                }
                 setBody(requestBody)
             }
 
