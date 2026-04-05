@@ -134,27 +134,28 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(uiState.messages) { message ->
+                    MessageBubble(
+                        message = message,
+                        agent = uiState.agents.find { it.id == message.agentId },
+                        onLongPress = { text ->
+                            copyToClipboard(text, context)
+                        }
+                    )
+                }
+            }
+            
             if (uiState.isLoading || uiState.isSendingToAll) {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                        .padding(16.dp)
                 )
-            } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(uiState.messages) { message ->
-                        MessageBubble(
-                            message = message,
-                            agent = uiState.agents.find { it.id == message.agentId },
-                            onLongPress = { text ->
-                                copyToClipboard(text, context)
-                            }
-                        )
-                    }
-                }
             }
         }
     }

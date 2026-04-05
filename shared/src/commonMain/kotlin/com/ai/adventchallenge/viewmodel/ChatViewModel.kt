@@ -85,16 +85,14 @@ class ChatViewModel(
     fun sendMessageToAll(userMessage: String) {
         if (userMessage.isBlank()) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSendingToAll = true, error = null)
-
             val currentMessages = _uiState.value.messages.toMutableList()
             currentMessages.add(ChatMessage(role = "user", content = userMessage))
-            _uiState.value = _uiState.value.copy(messages = currentMessages)
+            _uiState.value = _uiState.value.copy(messages = currentMessages, isSendingToAll = true, error = null)
 
+            val userMessages = currentMessages.filter { it.role == "user" }
+            
             _uiState.value.agents.forEach { agent ->
-                viewModelScope.launch {
-                    sendRequestToAgent(userMessage, agent, currentMessages.filter { it.role == "user" })
-                }
+                sendRequestToAgent(userMessage, agent, userMessages)
             }
 
             _uiState.value = _uiState.value.copy(isSendingToAll = false)
@@ -104,12 +102,10 @@ class ChatViewModel(
     private fun sendMessageToAgent(userMessage: String, agent: Agent) {
         val currentMessages = _uiState.value.messages.toMutableList()
         currentMessages.add(ChatMessage(role = "user", content = userMessage))
-        _uiState.value = _uiState.value.copy(messages = currentMessages)
+        _uiState.value = _uiState.value.copy(messages = currentMessages, isLoading = true, error = null)
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-
-            val conversationHistory = _uiState.value.messages.filter { it.role != "user" || it.content != userMessage }
+            val conversationHistory = currentMessages.dropLast(1)
             
             val response = agent.processRequest(userMessage, conversationHistory, apiService)
 
