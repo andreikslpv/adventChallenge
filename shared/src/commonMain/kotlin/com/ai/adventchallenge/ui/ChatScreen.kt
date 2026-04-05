@@ -31,11 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ai.adventchallenge.agent.Agent
 import com.ai.adventchallenge.platform.copyToClipboard
 import com.ai.adventchallenge.platform.getClipboardContext
 import com.ai.adventchallenge.ui.components.AgentsRow
 import com.ai.adventchallenge.ui.components.MessageBubble
-import com.ai.adventchallenge.viewmodel.Agent
 import com.ai.adventchallenge.viewmodel.ChatViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -29,7 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ai.adventchallenge.viewmodel.Agent
+import com.ai.adventchallenge.agent.Agent
 
 @Composable
 fun AgentsRow(

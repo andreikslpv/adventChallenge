@@ -27,9 +27,9 @@ data class AIModel(
 ) {
     companion object {
         val AVAILABLE_MODELS = listOf(
+            AIModel(AIProvider.ZAI, "glm-4.5-flash"),
             AIModel(AIProvider.ZAI, "glm-4.6"),
             AIModel(AIProvider.ZAI, "glm-4.7"),
-            AIModel(AIProvider.ZAI, "glm-4.5-flash"),
 //            AIModel(AIProvider.OPENAI, "gpt-4o"),
 //            AIModel(AIProvider.OPENAI, "gpt-4o-mini"),
 //            AIModel(AIProvider.OPENAI, "gpt-3.5-turbo")

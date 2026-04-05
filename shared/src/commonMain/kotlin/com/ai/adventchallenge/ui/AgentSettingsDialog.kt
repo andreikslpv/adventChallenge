@@ -41,15 +41,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.adventchallenge.api.AIModel
-import com.ai.adventchallenge.viewmodel.Agent
-import com.ai.adventchallenge.viewmodel.ChatSettings
+import com.ai.adventchallenge.agent.Agent
+import com.ai.adventchallenge.agent.AgentSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgentSettingsDialog(
     agent: Agent,
     onDismiss: () -> Unit,
-    onSettingsChanged: (ChatSettings) -> Unit
+    onSettingsChanged: (AgentSettings) -> Unit
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -213,7 +213,7 @@ fun AgentSettingsDialog(
                                 maxTokensError = "Значение должно быть от 1 до 8192"
                             } else {
                                 onSettingsChanged(
-                                    ChatSettings(
+                                    AgentSettings(
                                         systemPrompt = systemPrompt,
                                         temperature = temperature,
                                         selectedModel = selectedModel,
