@@ -17,6 +17,7 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.core.context.startKoin
+import org.koin.core.module.Module
 import org.koin.dsl.module
 
 fun initKoin() {
@@ -26,11 +27,14 @@ fun initKoin() {
 }
 
 val appModule = module {
+    includes(dbModule)
     single { createHttpClient() }
     single { ApiKeyProvider() }
     single { ZaiApiService(get()) }
     single { ChatViewModel(get()) }
 }
+
+expect val dbModule: Module
 
 fun createHttpClient(): HttpClient {
     return HttpClient {

@@ -96,12 +96,14 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
+                implementation(projects.db)
                 implementation(libs.ktor.client.okhttp)
             }
         }
 
         val jvmMain by getting {
             dependencies {
+                implementation(projects.db)
                 implementation(libs.ktor.client.okhttp)
             }
         }
