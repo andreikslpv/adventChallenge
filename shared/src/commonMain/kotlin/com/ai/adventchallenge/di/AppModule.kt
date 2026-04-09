@@ -22,19 +22,18 @@ import org.koin.dsl.module
 
 fun initKoin() {
     startKoin {
-        modules(appModule)
+        modules(listOf(appModule, platformModule))
     }
 }
 
 val appModule = module {
-    includes(dbModule)
     single { createHttpClient() }
     single { ApiKeyProvider() }
     single { ZaiApiService(get()) }
     single { ChatViewModel(get()) }
 }
 
-expect val dbModule: Module
+expect val platformModule: Module
 
 fun createHttpClient(): HttpClient {
     return HttpClient {
