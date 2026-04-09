@@ -40,7 +40,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.ai.adventchallenge.api.AIModel
+import com.ai.adventchallenge.data.api.AIModel
 import com.ai.adventchallenge.agent.Agent
 import com.ai.adventchallenge.agent.AgentSettings
 

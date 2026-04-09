@@ -16,10 +16,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,10 +38,15 @@ import com.ai.adventchallenge.agent.Agent
 fun AgentsRow(
     agents: List<Agent>,
     selectedAgentId: String,
+    savedAgents: List<Agent>,
+    showAgentSelector: Boolean,
     onAgentSelected: (String) -> Unit,
     onAgentSettings: (Agent) -> Unit,
     onAddAgent: () -> Unit,
     onRemoveAgent: (String) -> Unit,
+    onCloseAgent: (String) -> Unit,
+    onHideAgentSelector: () -> Unit,
+    onSelectSavedAgent: (String) -> Unit
 ) {
     LazyRow(
         modifier = Modifier
@@ -55,11 +63,20 @@ fun AgentsRow(
                 canDelete = agents.size > 1,
                 onSelect = { onAgentSelected(agent.id) },
                 onConfigure = { onAgentSettings(agent) },
-                onDelete = { onRemoveAgent(agent.id) }
+                onDelete = { onRemoveAgent(agent.id) },
+                onClose = { onCloseAgent(agent.id) }
             )
         }
         item {
-            AddAgentButton(onAdd = onAddAgent)
+            Box {
+                AddAgentButton(onAdd = onAddAgent)
+                AgentSelectorDropdown(
+                    expanded = showAgentSelector,
+                    savedAgents = savedAgents,
+                    onDismiss = onHideAgentSelector,
+                    onSelectAgent = onSelectSavedAgent
+                )
+            }
         }
     }
 }
@@ -71,7 +88,8 @@ fun AgentCard(
     canDelete: Boolean,
     onSelect: () -> Unit,
     onConfigure: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onClose: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -105,8 +123,21 @@ fun AgentCard(
                 ) {
                     Icon(
                         Icons.Default.Settings,
-                        contentDescription = "Удалить",
+                        contentDescription = "Настроить",
                         tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Закрыть",
+                        tint = MaterialTheme.colorScheme.secondary
                     )
                 }
 
@@ -155,6 +186,46 @@ fun AddAgentButton(onAdd: () -> Unit) {
                     contentDescription = "Добавить агента",
                     modifier = Modifier.size(32.dp),
                     tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AgentSelectorDropdown(
+    expanded: Boolean,
+    savedAgents: List<Agent>,
+    onDismiss: () -> Unit,
+    onSelectAgent: (String) -> Unit
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        modifier = Modifier.width(200.dp)
+    ) {
+        DropdownMenuItem(
+            text = { Text("Новый агент") },
+            onClick = {
+                onSelectAgent(null.toString())
+                onDismiss()
+            }
+        )
+        
+        if (savedAgents.isNotEmpty()) {
+            savedAgents.forEach { agent ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = agent.settings.systemPrompt.ifEmpty { "Без промпта" },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    onClick = {
+                        onSelectAgent(agent.id)
+                        onDismiss()
+                    }
                 )
             }
         }

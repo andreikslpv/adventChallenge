@@ -1,6 +1,10 @@
 package com.ai.adventchallenge.di
 
-import com.ai.adventchallenge.api.ZaiApiService
+import com.ai.adventchallenge.data.api.ZaiApiService
+import com.ai.adventchallenge.domain.repositories.AgentRepository
+import com.ai.adventchallenge.domain.repositories.MessageRepository
+import com.ai.adventchallenge.data.repositories.AgentRepositoryImpl
+import com.ai.adventchallenge.data.repositories.MessageRepositoryImpl
 import com.ai.adventchallenge.platform.ApiKeyProvider
 import com.ai.adventchallenge.viewmodel.ChatViewModel
 import io.ktor.client.HttpClient
@@ -30,7 +34,9 @@ val appModule = module {
     single { createHttpClient() }
     single { ApiKeyProvider() }
     single { ZaiApiService(get()) }
-    single { ChatViewModel(get()) }
+    single<AgentRepository> { AgentRepositoryImpl(get()) }
+    single<MessageRepository> { MessageRepositoryImpl(get()) }
+    single { ChatViewModel(get(), get(), get()) }
 }
 
 expect val platformModule: Module

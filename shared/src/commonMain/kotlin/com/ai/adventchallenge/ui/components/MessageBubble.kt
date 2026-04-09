@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.adventchallenge.agent.Agent
-import com.ai.adventchallenge.api.dtos.ChatMessage
+import com.ai.adventchallenge.data.api.dtos.ChatMessage
 import kotlinx.serialization.json.Json
 
 private val json = Json { prettyPrint = true }

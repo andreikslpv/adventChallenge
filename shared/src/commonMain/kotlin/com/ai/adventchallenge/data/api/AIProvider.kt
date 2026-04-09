@@ -1,4 +1,4 @@
-package com.ai.adventchallenge.api
+package com.ai.adventchallenge.data.api
 
 enum class AIProvider(
     val displayName: String,

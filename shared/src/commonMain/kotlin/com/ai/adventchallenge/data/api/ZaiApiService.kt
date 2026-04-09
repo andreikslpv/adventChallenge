@@ -1,10 +1,10 @@
-package com.ai.adventchallenge.api
+package com.ai.adventchallenge.data.api
 
-import com.ai.adventchallenge.api.dtos.ChatMessage
-import com.ai.adventchallenge.api.dtos.ChatRequest
-import com.ai.adventchallenge.api.dtos.ChatResponse
-import com.ai.adventchallenge.api.dtos.ErrorResponse
-import com.ai.adventchallenge.api.dtos.ResponseFormat
+import com.ai.adventchallenge.data.api.dtos.ChatMessage
+import com.ai.adventchallenge.data.api.dtos.ChatRequest
+import com.ai.adventchallenge.data.api.dtos.ChatResponse
+import com.ai.adventchallenge.data.api.dtos.ErrorResponse
+import com.ai.adventchallenge.data.api.dtos.ResponseFormat
 import com.ai.adventchallenge.config.BuildKonfig
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth

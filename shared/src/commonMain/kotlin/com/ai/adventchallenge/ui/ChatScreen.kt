@@ -37,8 +37,10 @@ import com.ai.adventchallenge.platform.getClipboardContext
 import com.ai.adventchallenge.ui.components.AgentsRow
 import com.ai.adventchallenge.ui.components.MessageBubble
 import com.ai.adventchallenge.viewmodel.ChatViewModel
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
 @Composable
 fun ChatScreen(
     viewModel: ChatViewModel,
@@ -79,10 +81,21 @@ fun ChatScreen(
                 AgentsRow(
                     agents = uiState.agents,
                     selectedAgentId = uiState.selectedAgentId,
+                    savedAgents = uiState.savedAgents,
+                    showAgentSelector = uiState.showAgentSelector,
                     onAgentSelected = { viewModel.selectAgent(it) },
                     onAgentSettings = { showSettingsDialog(it) },
-                    onAddAgent = { viewModel.addAgent() },
-                    onRemoveAgent = { viewModel.removeAgent(it) }
+                    onAddAgent = { viewModel.showAgentSelector() },
+                    onRemoveAgent = { viewModel.removeAgent(it) },
+                    onCloseAgent = { viewModel.closeAgent(it) },
+                    onHideAgentSelector = { viewModel.hideAgentSelector() },
+                    onSelectSavedAgent = { agentId ->
+                        if (agentId == "null") {
+                            viewModel.addAgent(null)
+                        } else {
+                            viewModel.addAgent(agentId)
+                        }
+                    }
                 )
 
                 Row(
@@ -96,7 +109,7 @@ fun ChatScreen(
                         onValueChange = { inputText = it },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Введите сообщение...") },
-                        enabled = !uiState.isLoading && !uiState.isSendingToAll
+                        enabled = !uiState.isLoading && !uiState.isSendingToAll && uiState.selectedAgentId.isNotEmpty()
                     )
 
                     if (uiState.agents.size > 1) {
@@ -107,7 +120,7 @@ fun ChatScreen(
                                     inputText = ""
                                 }
                             },
-                            enabled = inputText.isNotBlank() && !uiState.isLoading && !uiState.isSendingToAll
+                            enabled = inputText.isNotBlank() && !uiState.isLoading && !uiState.isSendingToAll && uiState.selectedAgentId.isNotEmpty()
                         ) {
                             Text("Всем")
                         }
@@ -120,7 +133,7 @@ fun ChatScreen(
                                 inputText = ""
                             }
                         },
-                        enabled = inputText.isNotBlank() && !uiState.isLoading && !uiState.isSendingToAll
+                        enabled = inputText.isNotBlank() && !uiState.isLoading && !uiState.isSendingToAll && uiState.selectedAgentId.isNotEmpty()
                     ) {
                         Text("📤")
                     }
