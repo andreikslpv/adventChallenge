@@ -4,6 +4,8 @@ import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.ai.adventchallenge.db.AppDatabase
 import com.ai.adventchallenge.db.DATABASE_NAME
+import com.ai.adventchallenge.db.dao.AgentDao
+import com.ai.adventchallenge.db.dao.MessageDao
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidApplication
 import org.koin.dsl.module
@@ -20,4 +22,7 @@ actual val dbPlatformModule = module {
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
     }
+
+    single<AgentDao> { get<AppDatabase>().agentDao() }
+    single<MessageDao> { get<AppDatabase>().messageDao() }
 }
