@@ -1,15 +1,16 @@
-package com.ai.adventchallenge.data.api.dtos
+package com.ai.adventchallenge.data.api
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlin.time.Clock
 
 @Serializable
 data class ChatMessage(
     val id: String = "",
     val role: String,
     val content: String,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
     @Transient
     val systemPrompt: String = "",
     @Transient

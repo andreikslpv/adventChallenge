@@ -15,30 +15,4 @@ data class MessageEntity(
     val agentId: String?,
     val characterCount: Int?,
     val tokenCount: Int?
-) {
-    companion object {
-        fun fromDomain(
-            id: String,
-            sessionId: String,
-            timestamp: Long,
-            role: String,
-            content: String,
-            systemPrompt: String?,
-            agentId: String?,
-            characterCount: Int?,
-            tokenCount: Int?
-        ): MessageEntity {
-            return MessageEntity(
-                id = id,
-                sessionId = sessionId,
-                timestamp = timestamp,
-                role = role,
-                content = content,
-                systemPrompt = systemPrompt,
-                agentId = agentId,
-                characterCount = characterCount,
-                tokenCount = tokenCount
-            )
-        }
-    }
-}
+)

@@ -1,7 +1,7 @@
 package com.ai.adventchallenge.di
 
-import com.ai.adventchallenge.db.datasource.AgentDataSource
-import com.ai.adventchallenge.db.datasource.MessageDataSource
+import com.ai.adventchallenge.data.datasource.AgentDataSource
+import com.ai.adventchallenge.data.datasource.MessageDataSource
 import com.ai.adventchallenge.datasources.AgentDataSourceImpl
 import com.ai.adventchallenge.datasources.MessageDataSourceImpl
 import org.koin.core.module.Module

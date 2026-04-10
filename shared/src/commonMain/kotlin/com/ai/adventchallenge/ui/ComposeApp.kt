@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.ai.adventchallenge.agent.Agent
+import com.ai.adventchallenge.domain.model.Agent
 import com.ai.adventchallenge.viewmodel.ChatViewModel
 import org.koin.compose.viewmodel.koinViewModel
 

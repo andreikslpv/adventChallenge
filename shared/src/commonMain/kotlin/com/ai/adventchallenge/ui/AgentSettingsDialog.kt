@@ -40,9 +40,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.ai.adventchallenge.data.api.AIModel
-import com.ai.adventchallenge.agent.Agent
-import com.ai.adventchallenge.agent.AgentSettings
+import com.ai.adventchallenge.domain.model.AIModel
+import com.ai.adventchallenge.domain.model.Agent
+import com.ai.adventchallenge.domain.model.AgentSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

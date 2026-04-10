@@ -1,6 +1,6 @@
-package com.ai.adventchallenge.domain.repositories
+package com.ai.adventchallenge.domain.repository
 
-import com.ai.adventchallenge.agent.Agent
+import com.ai.adventchallenge.domain.model.Agent
 import kotlinx.coroutines.flow.Flow
 
 interface AgentRepository {

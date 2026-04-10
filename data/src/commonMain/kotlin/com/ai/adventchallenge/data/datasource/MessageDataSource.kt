@@ -1,0 +1,14 @@
+package com.ai.adventchallenge.data.datasource
+
+import com.ai.adventchallenge.domain.model.Message
+import kotlinx.coroutines.flow.Flow
+
+interface MessageDataSource {
+    fun getMessagesBySessionId(sessionId: String): Flow<List<Message>>
+    suspend fun getMessagesBySessionIdSync(sessionId: String): List<Message>
+    suspend fun insertMessage(message: Message)
+    suspend fun insertMessages(messages: List<Message>)
+    suspend fun deleteMessagesBySessionId(sessionId: String)
+    suspend fun deleteMessage(messageId: String)
+    suspend fun deleteAllMessages()
+}

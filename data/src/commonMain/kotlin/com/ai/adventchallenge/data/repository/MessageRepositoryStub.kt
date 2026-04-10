@@ -1,21 +1,21 @@
-package com.ai.adventchallenge.data.repositories
+package com.ai.adventchallenge.data.repository
 
-import com.ai.adventchallenge.data.api.dtos.ChatMessage
-import com.ai.adventchallenge.domain.repositories.MessageRepository
+import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.repository.MessageRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 
 class MessageRepositoryStub : MessageRepository {
-    private val sessionMessages = MutableStateFlow<Map<String, List<ChatMessage>>>(emptyMap())
+    private val sessionMessages = MutableStateFlow<Map<String, List<Message>>>(emptyMap())
 
-    override fun getMessagesBySessionId(sessionId: String): Flow<List<ChatMessage>> = 
+    override fun getMessagesBySessionId(sessionId: String): Flow<List<Message>> = 
         sessionMessages.map { it[sessionId] ?: emptyList() }
 
-    override suspend fun getMessagesBySessionIdSync(sessionId: String): List<ChatMessage> = 
+    override suspend fun getMessagesBySessionIdSync(sessionId: String): List<Message> = 
         sessionMessages.value[sessionId] ?: emptyList()
 
-    override suspend fun saveMessage(message: ChatMessage, sessionId: String) {
+    override suspend fun saveMessage(message: Message, sessionId: String) {
         val current = sessionMessages.value.toMutableMap()
         val messages = current[sessionId]?.toMutableList() ?: mutableListOf()
         val index = messages.indexOfFirst { it.id == message.id }
@@ -28,7 +28,7 @@ class MessageRepositoryStub : MessageRepository {
         sessionMessages.value = current
     }
 
-    override suspend fun saveMessages(messages: List<ChatMessage>, sessionId: String) {
+    override suspend fun saveMessages(messages: List<Message>, sessionId: String) {
         val current = sessionMessages.value.toMutableMap()
         val existingMessages = current[sessionId]?.toMutableList() ?: mutableListOf()
         messages.forEach { message ->

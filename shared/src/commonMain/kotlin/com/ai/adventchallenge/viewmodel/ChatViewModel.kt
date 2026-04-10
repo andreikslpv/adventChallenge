@@ -2,13 +2,13 @@ package com.ai.adventchallenge.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ai.adventchallenge.data.api.ZaiApiService
-import com.ai.adventchallenge.data.api.dtos.ChatMessage
-import com.ai.adventchallenge.agent.Agent
-import com.ai.adventchallenge.agent.AgentResponse
-import com.ai.adventchallenge.agent.AgentSettings
-import com.ai.adventchallenge.domain.repositories.AgentRepository
-import com.ai.adventchallenge.domain.repositories.MessageRepository
+import com.ai.adventchallenge.domain.model.Agent
+import com.ai.adventchallenge.domain.model.AgentSettings
+import com.ai.adventchallenge.domain.model.AgentResponse
+import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.repository.AgentRepository
+import com.ai.adventchallenge.domain.repository.MessageRepository
+import com.ai.adventchallenge.domain.usecase.ProcessAgentRequestUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +20,7 @@ import kotlin.uuid.Uuid
 data class ChatUiState(
     val agents: List<Agent> = emptyList(),
     val selectedAgentId: String = "",
-    val messages: List<ChatMessage> = emptyList(),
+    val messages: List<Message> = emptyList(),
     val isLoading: Boolean = false,
     val isSendingToAll: Boolean = false,
     val error: String? = null,
@@ -30,9 +30,9 @@ data class ChatUiState(
 
 @OptIn(ExperimentalUuidApi::class)
 class ChatViewModel(
-    val apiService: ZaiApiService,
-    val agentRepository: AgentRepository,
-    val messageRepository: MessageRepository
+    private val processAgentRequestUseCase: ProcessAgentRequestUseCase,
+    private val agentRepository: AgentRepository,
+    private val messageRepository: MessageRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         ChatUiState(
@@ -168,7 +168,7 @@ class ChatViewModel(
         if (userMessage.isBlank()) return
         viewModelScope.launch {
             val currentMessages = _uiState.value.messages.toMutableList()
-            currentMessages.add(ChatMessage(
+            currentMessages.add(Message(
                 id = Uuid.random().toString(),
                 role = "user",
                 content = userMessage
@@ -187,7 +187,7 @@ class ChatViewModel(
 
     private fun sendMessageToAgent(userMessage: String, agent: Agent) {
         val currentMessages = _uiState.value.messages.toMutableList()
-        val userMsg = ChatMessage(
+        val userMsg = Message(
             id = Uuid.random().toString(),
             role = "user",
             content = userMessage
@@ -198,7 +198,7 @@ class ChatViewModel(
         viewModelScope.launch {
             val conversationHistory = currentMessages.dropLast(1)
             
-            val response = agent.processRequest(userMessage, conversationHistory, apiService)
+            val response = processAgentRequestUseCase(agent, userMessage, conversationHistory)
 
             when (response) {
                 is AgentResponse.Success -> {
@@ -227,8 +227,8 @@ class ChatViewModel(
         }
     }
 
-    private suspend fun sendRequestToAgent(userMessage: String, agent: Agent, userMessages: List<ChatMessage>) {
-        val response = agent.processRequest(userMessage, userMessages, apiService)
+    private suspend fun sendRequestToAgent(userMessage: String, agent: Agent, userMessages: List<Message>) {
+        val response = processAgentRequestUseCase(agent, userMessage, userMessages)
 
         when (response) {
             is AgentResponse.Success -> {
@@ -251,7 +251,7 @@ class ChatViewModel(
         }
     }
 
-    private suspend fun saveMessagesToDatabase(messages: List<ChatMessage>, agentId: String) {
+    private suspend fun saveMessagesToDatabase(messages: List<Message>, agentId: String) {
         val selectedAgent = _uiState.value.agents.find { it.id == agentId }
         if (selectedAgent != null) {
             agentRepository.saveAgent(selectedAgent)

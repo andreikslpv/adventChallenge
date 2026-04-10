@@ -1,7 +1,8 @@
-package com.ai.adventchallenge.data.repositories
+package com.ai.adventchallenge.data.repository
 
-import com.ai.adventchallenge.agent.Agent
-import com.ai.adventchallenge.domain.repositories.AgentRepository
+import com.ai.adventchallenge.data.datasource.AgentDataSource
+import com.ai.adventchallenge.domain.model.Agent
+import com.ai.adventchallenge.domain.repository.AgentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 

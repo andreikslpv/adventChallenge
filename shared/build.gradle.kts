@@ -67,6 +67,9 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
+                implementation(projects.domain)
+                implementation(projects.data)
+
                 implementation(libs.compose.runtime)
                 implementation(libs.compose.foundation)
                 implementation(libs.compose.material3)
@@ -78,39 +81,23 @@ kotlin {
                 implementation(libs.androidx.lifecycle.runtimeCompose)
                 implementation(libs.androidx.navigation.compose)
 
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.content.negotiation)
-                implementation(libs.ktor.client.logging)
-                implementation(libs.ktor.serialization.kotlinx.json)
-                implementation(libs.kotlinx.serialization.json)
-
                 // Koin
                 implementation(project.dependencies.platform(libs.koin.bom))
                 implementation(libs.koin.core)
                 implementation(libs.koin.compose)
                 implementation(libs.koin.compose.viewmodel)
-
-                //testImplementation(libs.kotlin.test)
             }
         }
 
         val androidMain by getting {
             dependencies {
                 implementation(projects.db)
-                implementation(libs.ktor.client.okhttp)
             }
         }
 
         val jvmMain by getting {
             dependencies {
                 implementation(projects.db)
-                implementation(libs.ktor.client.okhttp)
-            }
-        }
-
-        val jsMain by getting {
-            dependencies {
-                implementation(libs.ktor.client.js)
             }
         }
     }

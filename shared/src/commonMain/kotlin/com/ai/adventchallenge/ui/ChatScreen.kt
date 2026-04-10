@@ -31,7 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.ai.adventchallenge.agent.Agent
+import com.ai.adventchallenge.domain.model.Agent
 import com.ai.adventchallenge.platform.copyToClipboard
 import com.ai.adventchallenge.platform.getClipboardContext
 import com.ai.adventchallenge.ui.components.AgentsRow
