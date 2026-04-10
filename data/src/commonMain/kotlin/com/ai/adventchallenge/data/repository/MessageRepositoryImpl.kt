@@ -15,11 +15,11 @@ class MessageRepositoryImpl(
         messageDataSource.getMessagesBySessionIdSync(sessionId)
 
     override suspend fun saveMessage(message: Message, sessionId: String) {
-        messageDataSource.insertMessage(message)
+        messageDataSource.insertMessage(message, sessionId)
     }
 
     override suspend fun saveMessages(messages: List<Message>, sessionId: String) {
-        messageDataSource.insertMessages(messages)
+        messageDataSource.insertMessages(messages, sessionId)
     }
 
     override suspend fun deleteMessagesBySessionId(sessionId: String) = 

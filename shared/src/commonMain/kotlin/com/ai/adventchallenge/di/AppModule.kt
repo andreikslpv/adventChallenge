@@ -15,11 +15,12 @@ import org.koin.core.module.Module
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 
-fun initKoin(appDeclaration: KoinAppDeclaration? = null) =
+fun initKoin(appDeclaration: KoinAppDeclaration? = null) {
     startKoin {
         modules(listOf(appModule, dataModule, platformModule))
         appDeclaration?.let { it() }
     }
+}
 
 val appModule = module {
 

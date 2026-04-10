@@ -111,6 +111,7 @@ class ChatViewModel(
 
     fun selectAgent(agentId: String) {
         _uiState.value = _uiState.value.copy(selectedAgentId = agentId)
+        loadMessagesForAgent(agentId)
     }
 
     fun updateAgentSettings(agentId: String, settings: AgentSettings) {

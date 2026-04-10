@@ -20,13 +20,13 @@ class MessageDataSourceImpl(
             entity.toDomainMessage()
         }
 
-    override suspend fun insertMessage(message: Message) {
-        val entity = message.toEntity()
+    override suspend fun insertMessage(message: Message, sessionId: String) {
+        val entity = message.toEntity(sessionId)
         messageDao.insertMessage(entity)
     }
 
-    override suspend fun insertMessages(messages: List<Message>) {
-        val entities = messages.map { it.toEntity() }
+    override suspend fun insertMessages(messages: List<Message>, sessionId: String) {
+        val entities = messages.map { it.toEntity(sessionId) }
         messageDao.insertMessages(entities)
     }
 
@@ -53,10 +53,10 @@ private fun MessageEntity.toDomainMessage(): Message {
     )
 }
 
-private fun Message.toEntity(): MessageEntity {
+private fun Message.toEntity(sessionId: String): MessageEntity {
     return MessageEntity(
         id = id,
-        sessionId = "",
+        sessionId = sessionId,
         timestamp = timestamp,
         role = role,
         content = content,
