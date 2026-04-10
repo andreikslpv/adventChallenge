@@ -1,35 +1,13 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.util.Properties
-import com.codingfeline.buildkonfig.compiler.FieldSpec.Type
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
-    alias(libs.plugins.buildkonfig)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinx.serialization)
-}
-
-// читаем local.properties
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) {
-        load(file.inputStream())
-    }
-}
-val zaiApiKey = localProperties.getProperty("zaiApiKey") ?: ""
-val openaiApiKey = localProperties.getProperty("openaiApiKey") ?: ""
-
-buildkonfig {
-    packageName = "com.ai.adventchallenge.config"
-
-    defaultConfigs {
-        buildConfigField(Type.STRING, "ZAI_API_KEY", zaiApiKey)
-        buildConfigField(Type.STRING, "OPENAI_API_KEY", openaiApiKey)
-    }
 }
 
 kotlin {
@@ -80,6 +58,7 @@ kotlin {
                 implementation(libs.androidx.lifecycle.viewmodelCompose)
                 implementation(libs.androidx.lifecycle.runtimeCompose)
                 implementation(libs.androidx.navigation.compose)
+                implementation(libs.kotlinx.serialization.json)
 
                 // Koin
                 implementation(project.dependencies.platform(libs.koin.bom))

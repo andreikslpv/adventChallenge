@@ -1,9 +1,5 @@
 package com.ai.adventchallenge.agent
 
-import com.ai.adventchallenge.data.api.AIModel
-import com.ai.adventchallenge.data.api.ZaiApiService
-import com.ai.adventchallenge.data.api.dtos.ChatMessage
-
 //data class AgentSettings(
 //    val systemPrompt: String = "",
 //    val temperature: Float = 0.7f,

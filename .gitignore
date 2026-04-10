@@ -11,3 +11,4 @@
 local.properties
 /.kotlin/metadata/
 /.kotlin/errors/
+/.kotlin/sessions/
