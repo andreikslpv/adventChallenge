@@ -3,9 +3,11 @@ package com.ai.adventchallenge.di
 import com.ai.adventchallenge.data.di.dataModule
 import com.ai.adventchallenge.data.repository.AgentRepositoryImpl
 import com.ai.adventchallenge.data.repository.MessageRepositoryImpl
+import com.ai.adventchallenge.data.repository.SessionRepositoryImpl
 import com.ai.adventchallenge.data.service.AIServiceImpl
 import com.ai.adventchallenge.domain.repository.AgentRepository
 import com.ai.adventchallenge.domain.repository.MessageRepository
+import com.ai.adventchallenge.domain.repository.SessionRepository
 import com.ai.adventchallenge.domain.service.AIService
 import com.ai.adventchallenge.domain.usecase.ProcessAgentRequestUseCase
 import com.ai.adventchallenge.platform.ApiKeyProvider
@@ -28,8 +30,9 @@ val appModule = module {
     single<AIService> { AIServiceImpl(get()) }
     single<AgentRepository> { AgentRepositoryImpl(get()) }
     single<MessageRepository> { MessageRepositoryImpl(get()) }
+    single<SessionRepository> { SessionRepositoryImpl(get()) }
     single { ProcessAgentRequestUseCase(get()) }
-    single { ChatViewModel(get(), get(), get()) }
+    single { ChatViewModel(get(), get(), get(), get()) }
 }
 
 expect val platformModule: Module

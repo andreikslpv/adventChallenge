@@ -23,13 +23,14 @@ enum class AIProvider(
 data class AIModel(
     val provider: AIProvider,
     val modelName: String,
-    val displayName: String = "${provider.displayName}: $modelName"
+    val displayName: String = "${provider.displayName}: $modelName",
+    val maxContextWindow: Int = 200000
 ) {
     companion object {
         val AVAILABLE_MODELS = listOf(
-            AIModel(AIProvider.ZAI, "glm-4.5-flash"),
-            AIModel(AIProvider.ZAI, "glm-4.6"),
-            AIModel(AIProvider.ZAI, "glm-4.7"),
+            AIModel(AIProvider.ZAI, "glm-4.5-flash", maxContextWindow = 200000),
+            AIModel(AIProvider.ZAI, "glm-4.6", maxContextWindow = 200000),
+            AIModel(AIProvider.ZAI, "glm-4.7", maxContextWindow = 200000),
         )
 
         fun getModelById(id: String): AIModel? {

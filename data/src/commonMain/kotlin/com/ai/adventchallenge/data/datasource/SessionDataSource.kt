@@ -1,0 +1,13 @@
+package com.ai.adventchallenge.data.datasource
+
+import com.ai.adventchallenge.domain.model.Session
+import kotlinx.coroutines.flow.Flow
+
+interface SessionDataSource {
+    fun getAllSessions(): Flow<List<Session>>
+    suspend fun getSessionById(id: String): Session?
+    suspend fun insertSession(session: Session)
+    suspend fun deleteSession(id: String)
+    suspend fun deleteAllSessions()
+    suspend fun updateSessionName(id: String, name: String)
+}

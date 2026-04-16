@@ -6,8 +6,10 @@ import com.ai.adventchallenge.domain.model.Agent
 import com.ai.adventchallenge.domain.model.AgentSettings
 import com.ai.adventchallenge.domain.model.AgentResponse
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Session
 import com.ai.adventchallenge.domain.repository.AgentRepository
 import com.ai.adventchallenge.domain.repository.MessageRepository
+import com.ai.adventchallenge.domain.repository.SessionRepository
 import com.ai.adventchallenge.domain.usecase.ProcessAgentRequestUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,14 +27,17 @@ data class ChatUiState(
     val isSendingToAll: Boolean = false,
     val error: String? = null,
     val savedAgents: List<Agent> = emptyList(),
-    val showAgentSelector: Boolean = false
+    val showAgentSelector: Boolean = false,
+    val sessions: List<Session> = emptyList(),
+    val selectedSessionId: String = ""
 )
 
 @OptIn(ExperimentalUuidApi::class)
 class ChatViewModel(
     private val processAgentRequestUseCase: ProcessAgentRequestUseCase,
     private val agentRepository: AgentRepository,
-    private val messageRepository: MessageRepository
+    private val messageRepository: MessageRepository,
+    private val sessionRepository: SessionRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         ChatUiState(
@@ -46,12 +51,24 @@ class ChatViewModel(
 
     init {
         loadSavedAgents()
+        loadSessions()
     }
 
     private fun loadSavedAgents() {
         viewModelScope.launch {
             agentRepository.getAllAgents().collect { agents ->
                 _uiState.value = _uiState.value.copy(savedAgents = agents)
+            }
+        }
+    }
+
+    private fun loadSessions() {
+        viewModelScope.launch {
+            sessionRepository.getAllSessions().collect { sessions ->
+                _uiState.value = _uiState.value.copy(sessions = sessions)
+                if (_uiState.value.selectedSessionId.isEmpty() && sessions.isNotEmpty()) {
+                    selectSession(sessions.first().id)
+                }
             }
         }
     }
@@ -80,7 +97,6 @@ class ChatViewModel(
     }
 
     fun removeAgent(agentId: String) {
-        if (_uiState.value.agents.size <= 1) return
         val newAgents = _uiState.value.agents.filterNot { it.id == agentId }
         val newSelectedId = if (_uiState.value.selectedAgentId == agentId) {
             newAgents.firstOrNull()?.id ?: ""
@@ -88,6 +104,10 @@ class ChatViewModel(
             _uiState.value.selectedAgentId
         }
         _uiState.value = _uiState.value.copy(agents = newAgents, selectedAgentId = newSelectedId)
+        
+        viewModelScope.launch {
+            agentRepository.deleteAgent(agentId)
+        }
     }
 
     fun closeAgent(agentId: String) {
@@ -134,13 +154,13 @@ class ChatViewModel(
 
     private fun loadMessagesForAgent(agentId: String) {
         viewModelScope.launch {
-            val messages = messageRepository.getMessagesBySessionIdSync(agentId)
+            val messages = messageRepository.getMessagesBySessionIdSync(_uiState.value.selectedSessionId)
             _uiState.value = _uiState.value.copy(messages = messages)
         }
     }
 
     fun clearSession() {
-        val sessionId = _uiState.value.selectedAgentId
+        val sessionId = _uiState.value.selectedSessionId
         _uiState.value = _uiState.value.copy(messages = emptyList())
 
         if (sessionId.isNotEmpty()) {
@@ -257,10 +277,93 @@ class ChatViewModel(
         if (selectedAgent != null) {
             agentRepository.saveAgent(selectedAgent)
         }
-        messageRepository.saveMessages(messages, agentId)
+        messageRepository.saveMessages(messages, _uiState.value.selectedSessionId)
+        
+        val session = _uiState.value.sessions.find { it.id == _uiState.value.selectedSessionId }
+        if (session != null && session.selectedAgentId != agentId) {
+            val updatedSession = session.copy(selectedAgentId = agentId)
+            sessionRepository.saveSession(updatedSession)
+        }
     }
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun createNewSession() {
+        val sessionId = Uuid.random().toString()
+        val newSession = Session(
+            id = sessionId,
+            name = "Новая сессия ${_uiState.value.sessions.size + 1}",
+            selectedAgentId = _uiState.value.selectedAgentId
+        )
+        viewModelScope.launch {
+            sessionRepository.saveSession(newSession)
+            selectSession(sessionId)
+        }
+    }
+
+    fun selectSession(sessionId: String) {
+        _uiState.value = _uiState.value.copy(selectedSessionId = sessionId)
+        viewModelScope.launch {
+            val session = sessionRepository.getSessionById(sessionId)
+            if (session != null) {
+                _uiState.value = _uiState.value.copy(
+                    selectedSessionId = sessionId,
+                    selectedAgentId = if (session.selectedAgentId.isNotEmpty()) session.selectedAgentId else _uiState.value.selectedAgentId
+                )
+                loadMessagesForSession(sessionId)
+                loadAgentsForSession(sessionId)
+            }
+        }
+    }
+
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            messageRepository.deleteMessagesBySessionId(sessionId)
+            sessionRepository.deleteSession(sessionId)
+            
+            if (_uiState.value.selectedSessionId == sessionId) {
+                val remainingSessions = _uiState.value.sessions.filterNot { it.id == sessionId }
+                if (remainingSessions.isNotEmpty()) {
+                    selectSession(remainingSessions.first().id)
+                } else {
+                    createNewSession()
+                }
+            }
+        }
+    }
+
+    private fun loadMessagesForSession(sessionId: String) {
+        viewModelScope.launch {
+            val messages = messageRepository.getMessagesBySessionIdSync(sessionId)
+            _uiState.value = _uiState.value.copy(messages = messages)
+        }
+    }
+
+    private fun loadAgentsForSession(sessionId: String) {
+        viewModelScope.launch {
+            val messages = messageRepository.getMessagesBySessionIdSync(sessionId)
+            val agentIds = messages.mapNotNull { it.agentId }.distinct()
+            val agents = agentIds.mapNotNull { agentId ->
+                _uiState.value.savedAgents.find { it.id == agentId }
+            }.distinct()
+            
+            if (agents.isNotEmpty()) {
+                _uiState.value = _uiState.value.copy(
+                    agents = agents,
+                    selectedAgentId = agents.first().id
+                )
+            }
+        }
+    }
+
+    fun getSessionTokenCount(): Int {
+        return _uiState.value.messages.sumOf { it.tokenCount }
+    }
+
+    fun getSelectedAgentMaxContextWindow(): Int {
+        val selectedAgent = _uiState.value.agents.find { it.id == _uiState.value.selectedAgentId }
+        return selectedAgent?.settings?.selectedModel?.maxContextWindow ?: 200000
     }
 }

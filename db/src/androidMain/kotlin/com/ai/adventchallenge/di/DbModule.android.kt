@@ -6,6 +6,7 @@ import com.ai.adventchallenge.db.AppDatabase
 import com.ai.adventchallenge.db.DATABASE_NAME
 import com.ai.adventchallenge.db.dao.AgentDao
 import com.ai.adventchallenge.db.dao.MessageDao
+import com.ai.adventchallenge.db.dao.SessionDao
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidApplication
 import org.koin.dsl.module
@@ -25,4 +26,5 @@ actual val dbPlatformModule = module {
 
     single<AgentDao> { get<AppDatabase>().agentDao() }
     single<MessageDao> { get<AppDatabase>().messageDao() }
+    single<SessionDao> { get<AppDatabase>().sessionDao() }
 }

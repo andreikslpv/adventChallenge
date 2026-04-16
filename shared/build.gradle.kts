@@ -53,6 +53,7 @@ kotlin {
                 implementation(libs.androidx.lifecycle.runtimeCompose)
                 implementation(libs.androidx.navigation.compose)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
 
                 // Koin
                 implementation(project.dependencies.platform(libs.koin.bom))
