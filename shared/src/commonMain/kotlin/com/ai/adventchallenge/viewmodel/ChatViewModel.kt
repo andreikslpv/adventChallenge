@@ -66,8 +66,12 @@ class ChatViewModel(
         viewModelScope.launch {
             sessionRepository.getAllSessions().collect { sessions ->
                 _uiState.value = _uiState.value.copy(sessions = sessions)
-                if (_uiState.value.selectedSessionId.isEmpty() && sessions.isNotEmpty()) {
-                    selectSession(sessions.first().id)
+                if (_uiState.value.selectedSessionId.isEmpty()) {
+                    if (sessions.isNotEmpty()) {
+                        selectSession(sessions.first().id)
+                    } else {
+                        createNewSession()
+                    }
                 }
             }
         }
@@ -159,6 +163,20 @@ class ChatViewModel(
         }
     }
 
+    private suspend fun updateSessionNameIfNeeded(firstMessage: String) {
+        val sessionId = _uiState.value.selectedSessionId
+        val session = _uiState.value.sessions.find { it.id == sessionId }
+        
+        if (session != null && session.name.startsWith("Новая сессия")) {
+            val newName = firstMessage.take(50).let { if (firstMessage.length > 50) "$it..." else it }
+            val updatedSession = session.copy(name = newName)
+            sessionRepository.saveSession(updatedSession)
+            _uiState.value = _uiState.value.copy(
+                sessions = _uiState.value.sessions.map { if (it.id == sessionId) updatedSession else it }
+            )
+        }
+    }
+
     fun clearSession() {
         val sessionId = _uiState.value.selectedSessionId
         _uiState.value = _uiState.value.copy(messages = emptyList())
@@ -188,16 +206,19 @@ class ChatViewModel(
     fun sendMessageToAll(userMessage: String) {
         if (userMessage.isBlank()) return
         viewModelScope.launch {
+            val outgoingTokens = userMessage.length / 4
             val currentMessages = _uiState.value.messages.toMutableList()
             currentMessages.add(Message(
                 id = Uuid.random().toString(),
                 role = "user",
-                content = userMessage
+                content = userMessage,
+                characterCount = userMessage.length,
+                outgoingTokenCount = outgoingTokens
             ))
             _uiState.value = _uiState.value.copy(messages = currentMessages, isSendingToAll = true, error = null)
 
             val userMessages = currentMessages.filter { it.role == "user" }
-            
+
             _uiState.value.agents.forEach { agent ->
                 sendRequestToAgent(userMessage, agent, userMessages)
             }
@@ -208,17 +229,20 @@ class ChatViewModel(
 
     private fun sendMessageToAgent(userMessage: String, agent: Agent) {
         val currentMessages = _uiState.value.messages.toMutableList()
+        val outgoingTokens = userMessage.length / 4
         val userMsg = Message(
             id = Uuid.random().toString(),
             role = "user",
-            content = userMessage
+            content = userMessage,
+            characterCount = userMessage.length,
+            outgoingTokenCount = outgoingTokens
         )
         currentMessages.add(userMsg)
         _uiState.value = _uiState.value.copy(messages = currentMessages, isLoading = true, error = null)
 
         viewModelScope.launch {
             val conversationHistory = currentMessages.dropLast(1)
-            
+
             val response = processAgentRequestUseCase(agent, userMessage, conversationHistory)
 
             when (response) {
@@ -236,6 +260,7 @@ class ChatViewModel(
                         isLoading = false
                     )
 
+                    updateSessionNameIfNeeded(userMessage)
                     saveMessagesToDatabase(updatedMessages, agent.id)
                 }
                 is AgentResponse.Error -> {
@@ -264,6 +289,7 @@ class ChatViewModel(
                 currentMessages.add(messageWithAgentInfo)
                 _uiState.value = _uiState.value.copy(messages = currentMessages)
 
+                updateSessionNameIfNeeded(userMessage)
                 saveMessagesToDatabase(currentMessages, agent.id)
             }
             is AgentResponse.Error -> {
@@ -359,7 +385,7 @@ class ChatViewModel(
     }
 
     fun getSessionTokenCount(): Int {
-        return _uiState.value.messages.sumOf { it.tokenCount }
+        return _uiState.value.messages.sumOf { it.tokenCount + it.outgoingTokenCount }
     }
 
     fun getSelectedAgentMaxContextWindow(): Int {

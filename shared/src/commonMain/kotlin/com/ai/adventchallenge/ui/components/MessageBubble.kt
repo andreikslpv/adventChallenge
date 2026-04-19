@@ -91,6 +91,27 @@ fun MessageBubble(
                         text = displayContent,
                         color = contentColor
                     )
+                    if (isUser && (message.characterCount > 0 || message.outgoingTokenCount > 0)) {
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            if (message.outgoingTokenCount > 0) {
+                                Text(
+                                    text = "Исходящие: ${message.outgoingTokenCount} токенов",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = contentColor.copy(alpha = 0.7f)
+                                )
+                            }
+                            if (message.characterCount > 0) {
+                                Text(
+                                    text = "${message.characterCount} символов",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = contentColor.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
                     if (!isUser && (message.characterCount > 0 || message.tokenCount > 0)) {
                         Spacer(modifier = Modifier.size(8.dp))
                         Row(

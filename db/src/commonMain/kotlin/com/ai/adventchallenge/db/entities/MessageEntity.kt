@@ -14,5 +14,6 @@ data class MessageEntity(
     val systemPrompt: String?,
     val agentId: String?,
     val characterCount: Int?,
-    val tokenCount: Int?
+    val tokenCount: Int?,
+    val outgoingTokenCount: Int?
 )

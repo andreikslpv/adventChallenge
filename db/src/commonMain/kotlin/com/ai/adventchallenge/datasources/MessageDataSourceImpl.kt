@@ -49,6 +49,7 @@ private fun MessageEntity.toDomainMessage(): Message {
         agentId = agentId ?: "",
         characterCount = characterCount ?: 0,
         tokenCount = tokenCount ?: 0,
+        outgoingTokenCount = outgoingTokenCount ?: 0,
         timestamp = timestamp
     )
 }
@@ -63,6 +64,7 @@ private fun Message.toEntity(sessionId: String): MessageEntity {
         systemPrompt = systemPrompt.ifEmpty { null },
         agentId = agentId.ifEmpty { null },
         characterCount = if (characterCount > 0) characterCount else null,
-        tokenCount = if (tokenCount > 0) tokenCount else null
+        tokenCount = if (tokenCount > 0) tokenCount else null,
+        outgoingTokenCount = if (outgoingTokenCount > 0) outgoingTokenCount else null
     )
 }
