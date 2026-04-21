@@ -9,7 +9,9 @@ import com.ai.adventchallenge.domain.repository.AgentRepository
 import com.ai.adventchallenge.domain.repository.MessageRepository
 import com.ai.adventchallenge.domain.repository.SessionRepository
 import com.ai.adventchallenge.domain.service.AIService
-import com.ai.adventchallenge.domain.usecase.ProcessAgentRequestUseCase
+import com.ai.adventchallenge.domain.service.MainAgent
+import com.ai.adventchallenge.domain.service.SummarizerAgent
+
 import com.ai.adventchallenge.platform.ApiKeyProvider
 import com.ai.adventchallenge.viewmodel.ChatViewModel
 import org.koin.core.context.startKoin
@@ -31,8 +33,9 @@ val appModule = module {
     single<AgentRepository> { AgentRepositoryImpl(get()) }
     single<MessageRepository> { MessageRepositoryImpl(get()) }
     single<SessionRepository> { SessionRepositoryImpl(get()) }
-    single { ProcessAgentRequestUseCase(get()) }
-    single { ChatViewModel(get(), get(), get(), get()) }
+    single { MainAgent(get()) }
+    single { SummarizerAgent(get()) }
+    single { ChatViewModel(get(), get(), get(), get(), get()) }
 }
 
 expect val platformModule: Module

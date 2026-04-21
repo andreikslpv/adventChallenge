@@ -18,6 +18,12 @@ interface SessionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSession(session: SessionEntity)
 
+    @Query("UPDATE sessions SET summary = :summary WHERE id = :id")
+    suspend fun updateSessionSummary(id: String, summary: String)
+
+    @Query("UPDATE sessions SET isCompressionEnabled = :isEnabled WHERE id = :id")
+    suspend fun updateSessionCompressionEnabled(id: String, isEnabled: Boolean)
+
     @Query("DELETE FROM sessions WHERE id = :id")
     suspend fun deleteSession(id: String)
 

@@ -6,5 +6,7 @@ data class Session(
     val id: String,
     val name: String,
     val createdAt: Long = Clock.System.now().toEpochMilliseconds(),
-    val selectedAgentId: String = ""
+    val selectedAgentId: String = "",
+    val summary: String = "",
+    val isCompressionEnabled: Boolean = false
 )

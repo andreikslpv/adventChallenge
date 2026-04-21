@@ -9,5 +9,7 @@ data class SessionEntity(
     val id: String,
     val name: String,
     val createdAt: Long,
-    val selectedAgentId: String
+    val selectedAgentId: String,
+    val summary: String = "",
+    val isCompressionEnabled: Boolean = false
 )

@@ -13,5 +13,6 @@ data class Message(
     val agentId: String = "",
     val characterCount: Int = 0,
     val tokenCount: Int = 0,
-    val outgoingTokenCount: Int = 0
+    val outgoingTokenCount: Int = 0,
+    val isSummarized: Boolean = false
 )

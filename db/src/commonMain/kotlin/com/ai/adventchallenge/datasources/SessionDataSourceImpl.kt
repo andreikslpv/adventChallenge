@@ -23,6 +23,12 @@ class SessionDataSourceImpl(
         sessionDao.insertSession(entity)
     }
 
+    override suspend fun updateSessionSummary(id: String, summary: String) =
+        sessionDao.updateSessionSummary(id, summary)
+
+    override suspend fun updateSessionCompressionEnabled(id: String, isEnabled: Boolean) =
+        sessionDao.updateSessionCompressionEnabled(id, isEnabled)
+
     override suspend fun deleteSession(id: String) = sessionDao.deleteSession(id)
 
     override suspend fun deleteAllSessions() = sessionDao.deleteAllSessions()
@@ -36,7 +42,9 @@ private fun SessionEntity.toDomainSession(): Session {
         id = id,
         name = name,
         createdAt = createdAt,
-        selectedAgentId = selectedAgentId
+        selectedAgentId = selectedAgentId,
+        summary = summary,
+        isCompressionEnabled = isCompressionEnabled
     )
 }
 
@@ -45,6 +53,8 @@ private fun Session.toEntity(): SessionEntity {
         id = id,
         name = name,
         createdAt = createdAt,
-        selectedAgentId = selectedAgentId
+        selectedAgentId = selectedAgentId,
+        summary = summary,
+        isCompressionEnabled = isCompressionEnabled
     )
 }

@@ -21,10 +21,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -53,6 +55,7 @@ import com.ai.adventchallenge.ui.components.AgentsRow
 import com.ai.adventchallenge.ui.components.MessageBubble
 import com.ai.adventchallenge.viewmodel.ChatViewModel
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -68,6 +71,7 @@ fun ChatScreen(
     var inputText by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = getClipboardContext()
+    var showSessionSettings by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
@@ -87,6 +91,9 @@ fun ChatScreen(
             TopAppBar(
                 title = { Text("AI Chat") },
                 actions = {
+                    IconButton(onClick = { showSessionSettings = true }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Настройки сессии")
+                    }
                     TextButton(onClick = { viewModel.clearSession() }) {
                         Text("Очистить")
                     }
@@ -270,10 +277,21 @@ fun ChatScreen(
             }
         }
     }
+
+    val currentSession = viewModel.getCurrentSession()
+    if (showSessionSettings && currentSession != null) {
+        SessionSettingsDialog(
+            session = currentSession,
+            onDismiss = { showSessionSettings = false },
+            onSettingsChanged = { isEnabled ->
+                viewModel.updateSessionCompressionEnabled(isEnabled)
+            }
+        )
+    }
 }
 
 private fun formatTimestamp(timestamp: Long): String {
     val instant = Instant.fromEpochMilliseconds(timestamp)
     val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    return "${dateTime.dayOfMonth.toString().padStart(2, '0')}.${dateTime.monthNumber.toString().padStart(2, '0')}.${dateTime.year} ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}"
+    return "${dateTime.day.toString().padStart(2, '0')}.${dateTime.month.number.toString().padStart(2, '0')}.${dateTime.year} ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}"
 }

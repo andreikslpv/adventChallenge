@@ -15,5 +15,6 @@ data class MessageEntity(
     val agentId: String?,
     val characterCount: Int?,
     val tokenCount: Int?,
-    val outgoingTokenCount: Int?
+    val outgoingTokenCount: Int?,
+    val isSummarized: Boolean = false
 )

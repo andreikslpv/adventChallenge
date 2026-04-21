@@ -9,7 +9,12 @@ fun main() {
     initKoin()
 
     application {
-        Window(onCloseRequest = ::exitApplication) {
+        Window(
+            onCloseRequest = ::exitApplication,
+            state = androidx.compose.ui.window.WindowState(
+                placement = androidx.compose.ui.window.WindowPlacement.Maximized
+            )
+        ) {
             ComposeApp()
         }
     }

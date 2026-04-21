@@ -18,6 +18,12 @@ class SessionRepositoryImpl(
         sessionDataSource.insertSession(session)
     }
 
+    override suspend fun updateSessionSummary(id: String, summary: String) = 
+        sessionDataSource.updateSessionSummary(id, summary)
+
+    override suspend fun updateSessionCompressionEnabled(id: String, isEnabled: Boolean) = 
+        sessionDataSource.updateSessionCompressionEnabled(id, isEnabled)
+
     override suspend fun deleteSession(id: String) = 
         sessionDataSource.deleteSession(id)
 

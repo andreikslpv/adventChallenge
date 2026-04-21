@@ -14,6 +14,9 @@ class MessageRepositoryImpl(
     override suspend fun getMessagesBySessionIdSync(sessionId: String): List<Message> = 
         messageDataSource.getMessagesBySessionIdSync(sessionId)
 
+    override suspend fun getUnsummarizedMessages(sessionId: String, limit: Int): List<Message> = 
+        messageDataSource.getUnsummarizedMessages(sessionId, limit)
+
     override suspend fun saveMessage(message: Message, sessionId: String) {
         messageDataSource.insertMessage(message, sessionId)
     }
@@ -21,6 +24,9 @@ class MessageRepositoryImpl(
     override suspend fun saveMessages(messages: List<Message>, sessionId: String) {
         messageDataSource.insertMessages(messages, sessionId)
     }
+
+    override suspend fun markMessagesAsSummarized(messageIds: List<String>) = 
+        messageDataSource.markMessagesAsSummarized(messageIds)
 
     override suspend fun deleteMessagesBySessionId(sessionId: String) = 
         messageDataSource.deleteMessagesBySessionId(sessionId)
