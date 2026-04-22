@@ -4,6 +4,7 @@ import com.ai.adventchallenge.data.datasource.MessageDataSource
 import com.ai.adventchallenge.db.dao.MessageDao
 import com.ai.adventchallenge.db.entities.MessageEntity
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -51,7 +52,7 @@ class MessageDataSourceImpl(
 private fun MessageEntity.toDomainMessage(): Message {
     return Message(
         id = id,
-        role = role,
+        role = Role.entries.find { it.value() == role } ?: Role.USER,
         content = content,
         systemPrompt = systemPrompt ?: "",
         agentId = agentId ?: "",
@@ -68,7 +69,7 @@ private fun Message.toEntity(sessionId: String): MessageEntity {
         id = id,
         sessionId = sessionId,
         timestamp = timestamp,
-        role = role,
+        role = role.value(),
         content = content,
         systemPrompt = systemPrompt.ifEmpty { null },
         agentId = agentId.ifEmpty { null },

@@ -3,6 +3,7 @@ package com.ai.adventchallenge.domain.context.strategy
 import com.ai.adventchallenge.domain.context.ContextSettings
 import com.ai.adventchallenge.domain.context.ContextStrategy
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 import com.ai.adventchallenge.domain.service.SummarizerAgent
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -12,7 +13,7 @@ class SummaryStrategy(
     private val summarizerAgent: SummarizerAgent
 ) : ContextStrategy {
     private var currentSummary = ""
-    private var summarizedMessageCount = 0
+    private var lastSummarizedMessageId: String? = null
     private val pendingMessages = mutableListOf<Message>()
 
     override suspend fun onUserMessage(message: Message) {
@@ -26,33 +27,35 @@ class SummaryStrategy(
     }
 
     override fun buildContext(allMessages: List<Message>): List<Message> {
-        val recentMessages = if (summarizedMessageCount > 0) {
-            allMessages.drop(summarizedMessageCount)
+        val recentMessages = if (lastSummarizedMessageId != null) {
+            allMessages.dropWhile { it.id != lastSummarizedMessageId }.drop(1)
         } else {
             allMessages
         }
 
+        val nonSystemMessages = recentMessages.filter { it.role != Role.SYSTEM }
+
         return if (currentSummary.isNotEmpty()) {
             val summaryMessage = Message(
-                role = "system",
+                role = Role.SYSTEM,
                 content = "Previous conversation summary:\n$currentSummary"
             )
-            listOf(summaryMessage) + recentMessages
+            listOf(summaryMessage) + nonSystemMessages
         } else {
-            recentMessages
+            nonSystemMessages
         }
     }
 
     override fun reset() {
         currentSummary = ""
-        summarizedMessageCount = 0
+        lastSummarizedMessageId = null
         pendingMessages.clear()
     }
 
     override fun serializeState(): String {
         val state = SummaryState(
             currentSummary = currentSummary,
-            summarizedMessageCount = summarizedMessageCount
+            lastSummarizedMessageId = lastSummarizedMessageId
         )
         return json.encodeToString(state)
     }
@@ -62,7 +65,7 @@ class SummaryStrategy(
             try {
                 val parsed = json.decodeFromString<SummaryState>(state)
                 currentSummary = parsed.currentSummary
-                summarizedMessageCount = parsed.summarizedMessageCount
+                lastSummarizedMessageId = parsed.lastSummarizedMessageId
                 pendingMessages.clear()
             } catch (_: Exception) {
             }
@@ -75,7 +78,7 @@ class SummaryStrategy(
             result.fold(
                 onSuccess = { newSummary ->
                     currentSummary = newSummary
-                    summarizedMessageCount += pendingMessages.size
+                    lastSummarizedMessageId = pendingMessages.last().id
                     pendingMessages.clear()
                 },
                 onFailure = {
@@ -87,7 +90,7 @@ class SummaryStrategy(
     @Serializable
     data class SummaryState(
         val currentSummary: String = "",
-        val summarizedMessageCount: Int = 0
+        val lastSummarizedMessageId: String? = null
     )
 
     companion object {

@@ -5,6 +5,7 @@ import com.ai.adventchallenge.domain.context.ContextStrategy
 import com.ai.adventchallenge.domain.context.Facts
 import com.ai.adventchallenge.domain.context.FactsExtractor
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -29,14 +30,16 @@ class StickyFactsStrategy(
         val factsText = buildFactsString()
         val windowSize = settings.factsWindowSize
 
-        val recentMessages = if (allMessages.size <= windowSize) {
-            allMessages
+        val nonSystemMessages = allMessages.filter { it.role != Role.SYSTEM }
+
+        val recentMessages = if (nonSystemMessages.size <= windowSize) {
+            nonSystemMessages
         } else {
-            allMessages.takeLast(windowSize)
+            nonSystemMessages.takeLast(windowSize)
         }
 
         val factsSystemMessage = Message(
-            role = "system",
+            role = Role.SYSTEM,
             content = "Known facts:\n$factsText"
         )
 

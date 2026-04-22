@@ -3,6 +3,7 @@ package com.ai.adventchallenge.domain.usecase
 import com.ai.adventchallenge.domain.model.Agent
 import com.ai.adventchallenge.domain.model.AgentResponse
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 import com.ai.adventchallenge.domain.service.AIService
 
 class ProcessAgentRequestUseCase(
@@ -56,14 +57,14 @@ class ProcessAgentRequestUseCase(
         if (systemPrompt.isNotBlank()) {
             messages.add(
                 Message(
-                    role = "system",
+                    role = Role.SYSTEM,
                     content = systemPrompt
                 )
             )
         }
 
         messages.addAll(conversationHistory)
-        messages.add(Message(role = "user", content = userMessage))
+        messages.add(Message(role = Role.USER, content = userMessage))
 
         return messages
     }

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.adventchallenge.domain.model.Agent
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 import kotlinx.serialization.json.Json
 
 private val json = Json { prettyPrint = true }
@@ -34,7 +35,7 @@ fun MessageBubble(
     agent: Agent?,
     onLongPress: (String) -> Unit
 ) {
-    val isUser = message.role == "user"
+    val isUser = message.role == Role.USER
     val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
     val color =
         if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant

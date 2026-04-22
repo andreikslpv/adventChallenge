@@ -3,6 +3,7 @@ package com.ai.adventchallenge.domain.service
 import com.ai.adventchallenge.domain.model.Agent
 import com.ai.adventchallenge.domain.model.AgentResponse
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 
 class MainAgent(
     private val aiService: AIService
@@ -17,7 +18,7 @@ class MainAgent(
             if (agent.settings.systemPrompt.isNotBlank()) {
                 messagesToSend.add(
                     Message(
-                        role = "system",
+                        role = Role.SYSTEM,
                         content = agent.settings.systemPrompt
                     )
                 )

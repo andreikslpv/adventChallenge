@@ -39,7 +39,7 @@ class AIServiceImpl(
 
 private fun Message.toDataChatMessage() = DataChatMessage(
     id = id,
-    role = role,
+    role = role.value(),
     content = content,
     timestamp = timestamp,
     systemPrompt = systemPrompt,
@@ -50,7 +50,8 @@ private fun Message.toDataChatMessage() = DataChatMessage(
 
 private fun DataChatMessage.toDomainMessage() = Message(
     id = id,
-    role = role,
+    role = com.ai.adventchallenge.domain.model.Role.entries.find { it.value() == role }
+        ?: com.ai.adventchallenge.domain.model.Role.USER,
     content = content,
     timestamp = timestamp,
     systemPrompt = systemPrompt,

@@ -9,6 +9,7 @@ import com.ai.adventchallenge.domain.model.Agent
 import com.ai.adventchallenge.domain.model.AgentResponse
 import com.ai.adventchallenge.domain.model.AgentSettings
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 import com.ai.adventchallenge.domain.model.Session
 import com.ai.adventchallenge.domain.repository.AgentRepository
 import com.ai.adventchallenge.domain.repository.MessageRepository
@@ -243,7 +244,7 @@ class ChatViewModel(
             val outgoingTokens = userMessage.length / 4
             val userMsg = Message(
                 id = Uuid.random().toString(),
-                role = "user",
+                role = Role.USER,
                 content = userMessage,
                 characterCount = userMessage.length,
                 outgoingTokenCount = outgoingTokens
@@ -272,7 +273,7 @@ class ChatViewModel(
         val outgoingTokens = userMessage.length / 4
         val userMsg = Message(
             id = Uuid.random().toString(),
-            role = "user",
+            role = Role.USER,
             content = userMessage,
             characterCount = userMessage.length,
             outgoingTokenCount = outgoingTokens,

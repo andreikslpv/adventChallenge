@@ -2,6 +2,7 @@ package com.ai.adventchallenge.domain.service
 
 import com.ai.adventchallenge.domain.model.AIModel
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 
 class SummarizerAgent(
     private val aiService: AIService
@@ -66,8 +67,8 @@ class SummarizerAgent(
                 .replace("{MESSAGES_BLOCK}", messagesText)
 
             val messagesToSend = listOf(
-                Message(role = "system", content = SYSTEM_PROMPT),
-                Message(role = "user", content = userPrompt)
+                Message(role = Role.SYSTEM, content = SYSTEM_PROMPT),
+                Message(role = Role.USER, content = userPrompt)
             )
 
             val result = aiService.sendMessage(

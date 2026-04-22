@@ -3,6 +3,7 @@ package com.ai.adventchallenge.domain.context.strategy
 import com.ai.adventchallenge.domain.context.ContextSettings
 import com.ai.adventchallenge.domain.context.ContextStrategy
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 
 class SlidingWindowStrategy(
     private val settings: ContextSettings
@@ -14,8 +15,7 @@ class SlidingWindowStrategy(
     }
 
     override fun buildContext(allMessages: List<Message>): List<Message> {
-        val systemMessages = allMessages.filter { it.role == "system" }
-        val nonSystemMessages = allMessages.filter { it.role != "system" }
+        val nonSystemMessages = allMessages.filter { it.role != Role.SYSTEM }
 
         val windowed = if (nonSystemMessages.size <= settings.slidingWindowSize) {
             nonSystemMessages
@@ -23,7 +23,11 @@ class SlidingWindowStrategy(
             nonSystemMessages.takeLast(settings.slidingWindowSize)
         }
 
-        return systemMessages + windowed
+        val windowIds = windowed.map { it.id }.toSet()
+
+        return allMessages.filter {
+            it.role == Role.SYSTEM || it.id in windowIds
+        }
     }
 
     override fun reset() {

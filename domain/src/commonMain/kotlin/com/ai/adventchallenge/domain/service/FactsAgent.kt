@@ -4,6 +4,7 @@ import com.ai.adventchallenge.domain.context.Facts
 import com.ai.adventchallenge.domain.context.FactsExtractor
 import com.ai.adventchallenge.domain.model.AIModel
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -72,8 +73,8 @@ class FactsAgent(
                 .replace("{USER_MESSAGE}", newMessage)
 
             val messagesToSend = listOf(
-                Message(role = "system", content = SYSTEM_PROMPT),
-                Message(role = "user", content = userPrompt)
+                Message(role = Role.SYSTEM, content = SYSTEM_PROMPT),
+                Message(role = Role.USER, content = userPrompt)
             )
 
             val result = aiService.sendMessage(
