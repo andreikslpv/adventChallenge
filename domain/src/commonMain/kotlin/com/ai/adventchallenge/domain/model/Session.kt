@@ -1,5 +1,7 @@
 package com.ai.adventchallenge.domain.model
 
+import com.ai.adventchallenge.domain.context.ContextSettings
+import com.ai.adventchallenge.domain.context.ContextStrategyType
 import kotlin.time.Clock
 
 data class Session(
@@ -8,5 +10,7 @@ data class Session(
     val createdAt: Long = Clock.System.now().toEpochMilliseconds(),
     val selectedAgentId: String = "",
     val summary: String = "",
-    val isCompressionEnabled: Boolean = false
+    val contextSettings: ContextSettings = ContextSettings(
+        strategy = ContextStrategyType.FULL_HISTORY
+    )
 )

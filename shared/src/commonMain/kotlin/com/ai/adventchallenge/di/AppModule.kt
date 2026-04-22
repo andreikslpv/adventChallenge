@@ -5,10 +5,12 @@ import com.ai.adventchallenge.data.repository.AgentRepositoryImpl
 import com.ai.adventchallenge.data.repository.MessageRepositoryImpl
 import com.ai.adventchallenge.data.repository.SessionRepositoryImpl
 import com.ai.adventchallenge.data.service.AIServiceImpl
+import com.ai.adventchallenge.domain.context.ContextStrategyFactory
 import com.ai.adventchallenge.domain.repository.AgentRepository
 import com.ai.adventchallenge.domain.repository.MessageRepository
 import com.ai.adventchallenge.domain.repository.SessionRepository
 import com.ai.adventchallenge.domain.service.AIService
+import com.ai.adventchallenge.domain.service.FactsAgent
 import com.ai.adventchallenge.domain.service.MainAgent
 import com.ai.adventchallenge.domain.service.SummarizerAgent
 
@@ -35,6 +37,8 @@ val appModule = module {
     single<SessionRepository> { SessionRepositoryImpl(get()) }
     single { MainAgent(get()) }
     single { SummarizerAgent(get()) }
+    single { FactsAgent(get()) }
+    single { ContextStrategyFactory(get(), get()) }
     single { ChatViewModel(get(), get(), get(), get(), get()) }
 }
 

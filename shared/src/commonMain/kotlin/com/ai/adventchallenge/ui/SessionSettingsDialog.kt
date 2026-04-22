@@ -9,8 +9,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -21,9 +22,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ai.adventchallenge.domain.context.ContextSettings
+import com.ai.adventchallenge.domain.context.ContextStrategyType
 import com.ai.adventchallenge.domain.model.Session
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,16 +35,20 @@ import com.ai.adventchallenge.domain.model.Session
 fun SessionSettingsDialog(
     session: Session,
     onDismiss: () -> Unit,
-    onSettingsChanged: (Boolean) -> Unit
+    onSettingsChanged: (ContextSettings) -> Unit
 ) {
-    var isCompressionEnabled by remember { mutableStateOf(session.isCompressionEnabled) }
+    var selectedStrategy by remember { mutableStateOf(session.contextSettings.strategy) }
+
+    var slidingWindowSize by remember { mutableStateOf(TextFieldValue(session.contextSettings.slidingWindowSize.toString())) }
+    var factsWindowSize by remember { mutableStateOf(TextFieldValue(session.contextSettings.factsWindowSize.toString())) }
+    var summaryTriggerSize by remember { mutableStateOf(TextFieldValue(session.contextSettings.summaryTriggerSize.toString())) }
 
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = true)
     ) {
         Surface(
-            shape = androidx.compose.material3.MaterialTheme.shapes.large,
+            shape = MaterialTheme.shapes.large,
             tonalElevation = 8.dp,
             modifier = Modifier.width(600.dp)
         ) {
@@ -60,25 +68,81 @@ fun SessionSettingsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = isCompressionEnabled,
-                        onCheckedChange = { isCompressionEnabled = it }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text("Сжатие истории")
+                Text(
+                    text = "Стратегия контекста",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column {
+                    ContextStrategyType.entries.forEach { strategy ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            androidx.compose.material3.RadioButton(
+                                selected = selectedStrategy == strategy,
+                                onClick = { selectedStrategy = strategy }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(getStrategyDisplayName(strategy))
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                when (selectedStrategy) {
+                    ContextStrategyType.SLIDING_WINDOW -> {
                         Text(
-                            text = "Включите для автоматического сжатия длинных бесед",
-                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Размер окна",
+                            style = MaterialTheme.typography.titleSmall
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = slidingWindowSize,
+                            onValueChange = { slidingWindowSize = it },
+                            label = { Text("Количество последних сообщений") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+
+                    ContextStrategyType.STICKY_FACTS -> {
+                        Text(
+                            text = "Размер окна фактов",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = factsWindowSize,
+                            onValueChange = { factsWindowSize = it },
+                            label = { Text("Количество последних сообщений с фактами") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+
+                    ContextStrategyType.SUMMARY -> {
+                        Text(
+                            text = "Размер триггера",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = summaryTriggerSize,
+                            onValueChange = { summaryTriggerSize = it },
+                            label = { Text("Количество сообщений до сжатия") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+
+                    ContextStrategyType.FULL_HISTORY -> {
                     }
                 }
 
@@ -86,7 +150,13 @@ fun SessionSettingsDialog(
 
                 Button(
                     onClick = {
-                        onSettingsChanged(isCompressionEnabled)
+                        val settings = ContextSettings(
+                            strategy = selectedStrategy,
+                            slidingWindowSize = slidingWindowSize.text.toIntOrNull() ?: 10,
+                            factsWindowSize = factsWindowSize.text.toIntOrNull() ?: 6,
+                            summaryTriggerSize = summaryTriggerSize.text.toIntOrNull() ?: 20
+                        )
+                        onSettingsChanged(settings)
                         onDismiss()
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -95,5 +165,14 @@ fun SessionSettingsDialog(
                 }
             }
         }
+    }
+}
+
+private fun getStrategyDisplayName(strategy: ContextStrategyType): String {
+    return when (strategy) {
+        ContextStrategyType.FULL_HISTORY -> "Полная история"
+        ContextStrategyType.SLIDING_WINDOW -> "Скользящее окно"
+        ContextStrategyType.STICKY_FACTS -> "Липкие факты"
+        ContextStrategyType.SUMMARY -> "Сжатие (Summary)"
     }
 }

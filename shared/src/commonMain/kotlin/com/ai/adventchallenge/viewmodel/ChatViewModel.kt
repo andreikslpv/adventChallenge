@@ -2,16 +2,18 @@ package com.ai.adventchallenge.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ai.adventchallenge.domain.context.ContextSettings
+import com.ai.adventchallenge.domain.context.ContextStrategy
+import com.ai.adventchallenge.domain.context.ContextStrategyFactory
 import com.ai.adventchallenge.domain.model.Agent
-import com.ai.adventchallenge.domain.model.AgentSettings
 import com.ai.adventchallenge.domain.model.AgentResponse
+import com.ai.adventchallenge.domain.model.AgentSettings
 import com.ai.adventchallenge.domain.model.Message
 import com.ai.adventchallenge.domain.model.Session
 import com.ai.adventchallenge.domain.repository.AgentRepository
 import com.ai.adventchallenge.domain.repository.MessageRepository
 import com.ai.adventchallenge.domain.repository.SessionRepository
 import com.ai.adventchallenge.domain.service.MainAgent
-import com.ai.adventchallenge.domain.service.SummarizerAgent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,17 +32,16 @@ data class ChatUiState(
     val savedAgents: List<Agent> = emptyList(),
     val showAgentSelector: Boolean = false,
     val sessions: List<Session> = emptyList(),
-    val selectedSessionId: String = "",
-    val isCompressionEnabled: Boolean = false
+    val selectedSessionId: String = ""
 )
 
 @OptIn(ExperimentalUuidApi::class)
 class ChatViewModel(
     private val mainAgent: MainAgent,
-    private val summarizerAgent: SummarizerAgent,
     private val agentRepository: AgentRepository,
     private val messageRepository: MessageRepository,
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val strategyFactory: ContextStrategyFactory
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         ChatUiState(
@@ -51,6 +52,8 @@ class ChatViewModel(
         )
     )
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
+
+    private var currentStrategy: ContextStrategy? = null
 
     init {
         loadSavedAgents()
@@ -75,9 +78,18 @@ class ChatViewModel(
                     } else {
                         createNewSession()
                     }
+                } else {
+                    val currentSession = sessions.find { it.id == _uiState.value.selectedSessionId }
+                    if (currentSession != null) {
+                        updateStrategy(currentSession.contextSettings)
+                    }
                 }
             }
         }
+    }
+
+    private fun updateStrategy(settings: ContextSettings) {
+        currentStrategy = strategyFactory.create(settings)
     }
 
     fun addAgent(agentId: String? = null) {
@@ -111,7 +123,7 @@ class ChatViewModel(
             _uiState.value.selectedAgentId
         }
         _uiState.value = _uiState.value.copy(agents = newAgents, selectedAgentId = newSelectedId)
-        
+
         viewModelScope.launch {
             agentRepository.deleteAgent(agentId)
         }
@@ -161,9 +173,10 @@ class ChatViewModel(
     private suspend fun updateSessionNameIfNeeded(firstMessage: String) {
         val sessionId = _uiState.value.selectedSessionId
         val session = _uiState.value.sessions.find { it.id == sessionId }
-        
+
         if (session != null && session.name.startsWith("Новая сессия")) {
-            val newName = firstMessage.take(50).let { if (firstMessage.length > 50) "$it..." else it }
+            val newName =
+                firstMessage.take(50).let { if (firstMessage.length > 50) "$it..." else it }
             val updatedSession = session.copy(name = newName)
             sessionRepository.saveSession(updatedSession)
             _uiState.value = _uiState.value.copy(
@@ -180,56 +193,23 @@ class ChatViewModel(
             viewModelScope.launch {
                 messageRepository.deleteMessagesBySessionId(sessionId)
                 sessionRepository.updateSessionSummary(sessionId, "")
+                currentStrategy?.reset()
             }
-        }
-    }
-
-    fun updateSessionCompressionEnabled(isEnabled: Boolean) {
-        val sessionId = _uiState.value.selectedSessionId
-        if (sessionId.isNotEmpty()) {
-            viewModelScope.launch {
-                sessionRepository.updateSessionCompressionEnabled(sessionId, isEnabled)
-            }
-        }
-    }
-
-    private suspend fun performSummarization(sessionId: String) {
-        val session = sessionRepository.getSessionById(sessionId) ?: return
-        
-        if (!session.isCompressionEnabled) {
-            return
-        }
-
-        val batchSize = 10
-        var hasMoreMessages = true
-
-        while (hasMoreMessages) {
-            val unsummarizedMessages = messageRepository.getUnsummarizedMessages(sessionId, batchSize)
-            
-            if (unsummarizedMessages.size < batchSize) {
-                hasMoreMessages = false
-                if (unsummarizedMessages.isEmpty()) {
-                    break
-                }
-            }
-
-            val result = summarizerAgent.summarize(session.summary, unsummarizedMessages)
-            
-            result.fold(
-                onSuccess = { newSummary ->
-                    sessionRepository.updateSessionSummary(sessionId, newSummary)
-                    val messageIds = unsummarizedMessages.map { it.id }
-                    messageRepository.markMessagesAsSummarized(messageIds)
-                },
-                onFailure = { exception ->
-                    println("Summarization failed: ${exception.message}")
-                }
-            )
         }
     }
 
     fun showAgentSelector() {
         _uiState.value = _uiState.value.copy(showAgentSelector = true)
+    }
+
+    fun updateSessionContextSettings(settings: ContextSettings) {
+        val sessionId = _uiState.value.selectedSessionId
+        if (sessionId.isNotEmpty()) {
+            viewModelScope.launch {
+                sessionRepository.updateSessionContextSettings(sessionId, settings)
+                updateStrategy(settings)
+            }
+        }
     }
 
     fun hideAgentSelector() {
@@ -239,7 +219,8 @@ class ChatViewModel(
     fun sendMessage(userMessage: String) {
         if (userMessage.isBlank()) return
 
-        val selectedAgent = _uiState.value.agents.find { it.id == _uiState.value.selectedAgentId } ?: return
+        val selectedAgent =
+            _uiState.value.agents.find { it.id == _uiState.value.selectedAgentId } ?: return
         sendMessageToAgent(userMessage, selectedAgent)
     }
 
@@ -248,14 +229,17 @@ class ChatViewModel(
         viewModelScope.launch {
             val outgoingTokens = userMessage.length / 4
             val currentMessages = _uiState.value.messages.toMutableList()
-            currentMessages.add(Message(
-                id = Uuid.random().toString(),
-                role = "user",
-                content = userMessage,
-                characterCount = userMessage.length,
-                outgoingTokenCount = outgoingTokens
-            ))
-            _uiState.value = _uiState.value.copy(messages = currentMessages, isSendingToAll = true, error = null)
+            currentMessages.add(
+                Message(
+                    id = Uuid.random().toString(),
+                    role = "user",
+                    content = userMessage,
+                    characterCount = userMessage.length,
+                    outgoingTokenCount = outgoingTokens
+                )
+            )
+            _uiState.value =
+                _uiState.value.copy(messages = currentMessages, isSendingToAll = true, error = null)
 
             val userMessages = currentMessages.filter { it.role == "user" }
 
@@ -279,23 +263,22 @@ class ChatViewModel(
             isSummarized = false
         )
         currentMessages.add(userMsg)
-        _uiState.value = _uiState.value.copy(messages = currentMessages, isLoading = true, error = null)
+        _uiState.value =
+            _uiState.value.copy(messages = currentMessages, isLoading = true, error = null)
 
         viewModelScope.launch {
             val sessionId = _uiState.value.selectedSessionId
-            
+
             messageRepository.saveMessage(userMsg, sessionId)
-            
+
+            currentStrategy?.onUserMessage(userMsg)
+
             val session = sessionRepository.getSessionById(sessionId)
-            if (session != null && session.isCompressionEnabled) {
-                performSummarization(sessionId)
-            }
-            
-            val updatedSession = sessionRepository.getSessionById(sessionId)
-            val sessionSummary = updatedSession?.summary ?: ""
-            val unsummarizedMessages = messageRepository.getUnsummarizedMessages(sessionId, Int.MAX_VALUE)
-            
-            val response = mainAgent.processRequest(agent, userMessage, unsummarizedMessages, sessionSummary)
+            val allMessages = messageRepository.getMessagesBySessionIdSync(sessionId)
+
+            val contextMessages = currentStrategy?.buildContext(allMessages) ?: allMessages
+
+            val response = mainAgent.processRequest(agent, userMessage, contextMessages, "")
 
             when (response) {
                 is AgentResponse.Success -> {
@@ -315,17 +298,20 @@ class ChatViewModel(
 
                     updateSessionNameIfNeeded(userMessage)
                     messageRepository.saveMessage(messageWithAgentInfo, sessionId)
-                    
+
+                    currentStrategy?.onAssistantMessage(messageWithAgentInfo)
+
                     val selectedAgent = _uiState.value.agents.find { it.id == agent.id }
                     if (selectedAgent != null) {
                         agentRepository.saveAgent(selectedAgent)
                     }
-                    
+
                     if (session != null && session.selectedAgentId != agent.id) {
                         val newSession = session.copy(selectedAgentId = agent.id)
                         sessionRepository.saveSession(newSession)
                     }
                 }
+
                 is AgentResponse.Error -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -336,15 +322,18 @@ class ChatViewModel(
         }
     }
 
-    private suspend fun sendRequestToAgent(userMessage: String, agent: Agent, userMessages: List<Message>) {
+    private suspend fun sendRequestToAgent(
+        userMessage: String,
+        agent: Agent,
+        userMessages: List<Message>
+    ) {
         val sessionId = _uiState.value.selectedSessionId
         val session = sessionRepository.getSessionById(sessionId)
-        val sessionSummary = session?.summary ?: ""
-        val unsummarizedMessages = messageRepository.getUnsummarizedMessages(sessionId, Int.MAX_VALUE)
+        val allMessages = messageRepository.getMessagesBySessionIdSync(sessionId)
 
-        val response = mainAgent.processRequest(agent, userMessage, unsummarizedMessages, sessionSummary)
+        val contextMessages = currentStrategy?.buildContext(allMessages) ?: allMessages
 
-        when (response) {
+        when (val response = mainAgent.processRequest(agent, userMessage, contextMessages, "")) {
             is AgentResponse.Success -> {
                 val messageWithAgentInfo = response.message.copy(
                     id = response.message.id.ifEmpty { Uuid.random().toString() },
@@ -360,17 +349,20 @@ class ChatViewModel(
 
                 updateSessionNameIfNeeded(userMessage)
                 messageRepository.saveMessage(messageWithAgentInfo, sessionId)
-                
+
+                currentStrategy?.onAssistantMessage(messageWithAgentInfo)
+
                 val selectedAgent = _uiState.value.agents.find { it.id == agent.id }
                 if (selectedAgent != null) {
                     agentRepository.saveAgent(selectedAgent)
                 }
-                
+
                 if (session != null && session.selectedAgentId != agent.id) {
                     val newSession = session.copy(selectedAgentId = agent.id)
                     sessionRepository.saveSession(newSession)
                 }
             }
+
             is AgentResponse.Error -> {
                 _uiState.value = _uiState.value.copy(error = response.message)
             }
@@ -399,10 +391,10 @@ class ChatViewModel(
         viewModelScope.launch {
             val session = sessionRepository.getSessionById(sessionId)
             if (session != null) {
+                updateStrategy(session.contextSettings)
                 _uiState.value = _uiState.value.copy(
                     selectedSessionId = sessionId,
-                    selectedAgentId = session.selectedAgentId.ifEmpty { _uiState.value.selectedAgentId },
-                    isCompressionEnabled = session.isCompressionEnabled
+                    selectedAgentId = session.selectedAgentId.ifEmpty { _uiState.value.selectedAgentId }
                 )
                 loadMessagesForSession(sessionId)
                 loadAgentsForSession(sessionId)
@@ -414,7 +406,7 @@ class ChatViewModel(
         viewModelScope.launch {
             messageRepository.deleteMessagesBySessionId(sessionId)
             sessionRepository.deleteSession(sessionId)
-            
+
             if (_uiState.value.selectedSessionId == sessionId) {
                 val remainingSessions = _uiState.value.sessions.filterNot { it.id == sessionId }
                 if (remainingSessions.isNotEmpty()) {
@@ -440,7 +432,7 @@ class ChatViewModel(
             val agents = agentIds.mapNotNull { agentId ->
                 _uiState.value.savedAgents.find { it.id == agentId }
             }.distinct()
-            
+
             if (agents.isNotEmpty()) {
                 _uiState.value = _uiState.value.copy(
                     agents = agents,

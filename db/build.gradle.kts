@@ -27,6 +27,7 @@ kotlin {
                 implementation(projects.data)
                 implementation(project.dependencies.platform(libs.koin.bom))
                 implementation(libs.koin.core)
+                implementation(libs.kotlinx.serialization.json)
                 // Room (API/runtime only, compiler ниже в androidMain)
                 implementation(libs.androidx.room.runtime)
                 implementation(libs.androidx.sqlite.bundled)

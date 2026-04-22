@@ -1,6 +1,7 @@
 package com.ai.adventchallenge.data.repository
 
 import com.ai.adventchallenge.data.datasource.SessionDataSource
+import com.ai.adventchallenge.domain.context.ContextSettings
 import com.ai.adventchallenge.domain.model.Session
 import com.ai.adventchallenge.domain.repository.SessionRepository
 import kotlinx.coroutines.flow.Flow
@@ -8,28 +9,32 @@ import kotlinx.coroutines.flow.Flow
 class SessionRepositoryImpl(
     private val sessionDataSource: SessionDataSource
 ) : SessionRepository {
-    override fun getAllSessions(): Flow<List<Session>> = 
+    override fun getAllSessions(): Flow<List<Session>> =
         sessionDataSource.getAllSessions()
 
-    override suspend fun getSessionById(id: String): Session? = 
+    override suspend fun getSessionById(id: String): Session? =
         sessionDataSource.getSessionById(id)
 
     override suspend fun saveSession(session: Session) {
         sessionDataSource.insertSession(session)
     }
 
-    override suspend fun updateSessionSummary(id: String, summary: String) = 
+    override suspend fun updateSessionSummary(id: String, summary: String) =
         sessionDataSource.updateSessionSummary(id, summary)
 
-    override suspend fun updateSessionCompressionEnabled(id: String, isEnabled: Boolean) = 
-        sessionDataSource.updateSessionCompressionEnabled(id, isEnabled)
+    override suspend fun updateSessionContextSettings(
+        id: String,
+        contextSettings: ContextSettings
+    ) {
+        sessionDataSource.updateSessionContextSettings(id, contextSettings)
+    }
 
-    override suspend fun deleteSession(id: String) = 
+    override suspend fun deleteSession(id: String) =
         sessionDataSource.deleteSession(id)
 
-    override suspend fun deleteAllSessions() = 
+    override suspend fun deleteAllSessions() =
         sessionDataSource.deleteAllSessions()
 
-    override suspend fun updateSessionName(id: String, name: String) = 
+    override suspend fun updateSessionName(id: String, name: String) =
         sessionDataSource.updateSessionName(id, name)
 }

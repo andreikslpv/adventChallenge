@@ -11,5 +11,5 @@ data class SessionEntity(
     val createdAt: Long,
     val selectedAgentId: String,
     val summary: String = "",
-    val isCompressionEnabled: Boolean = false
+    val contextSettingsJson: String = ""
 )

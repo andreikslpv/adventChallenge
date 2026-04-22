@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -142,22 +143,38 @@ fun ChatScreen(
                                     color = if (isSelected) Color(0xFF2196F3) else Color(0xFFE0E0E0),
                                     shape = RoundedCornerShape(8.dp)
                                 )
-                                .clickable { viewModel.selectSession(session.id) }
-                                .padding(12.dp)
                         ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = session.name,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = formatTimestamp(session.createdAt),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
-                                )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.selectSession(session.id) }
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = session.name,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = formatTimestamp(session.createdAt),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { viewModel.deleteSession(session.id) }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Удалить сессию",
+                                        tint = Color.Gray
+                                    )
+                                }
                             }
                         }
                     }
@@ -283,8 +300,8 @@ fun ChatScreen(
         SessionSettingsDialog(
             session = currentSession,
             onDismiss = { showSessionSettings = false },
-            onSettingsChanged = { isEnabled ->
-                viewModel.updateSessionCompressionEnabled(isEnabled)
+            onSettingsChanged = { settings ->
+                viewModel.updateSessionContextSettings(settings)
             }
         )
     }
