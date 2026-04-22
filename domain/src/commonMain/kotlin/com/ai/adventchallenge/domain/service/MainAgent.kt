@@ -9,17 +9,21 @@ class MainAgent(
 ) {
     suspend fun processRequest(
         agent: Agent,
-        userMessage: String,
-        conversationHistory: List<Message>,
-        sessionSummary: String
+        contextMessages: List<Message>
     ): AgentResponse {
         return try {
-            val messagesToSend = buildMessageList(
-                agent.settings.systemPrompt,
-                sessionSummary,
-                userMessage,
-                conversationHistory
-            )
+            val messagesToSend = mutableListOf<Message>()
+
+            if (agent.settings.systemPrompt.isNotBlank()) {
+                messagesToSend.add(
+                    Message(
+                        role = "system",
+                        content = agent.settings.systemPrompt
+                    )
+                )
+            }
+
+            messagesToSend.addAll(contextMessages)
 
             val maxTokens = agent.settings.maxTokens.toIntOrNull()
             val responseType = if (agent.settings.responseType == "json") "json_object" else "text"
@@ -45,37 +49,5 @@ class MainAgent(
         } catch (e: Exception) {
             AgentResponse.Error("Processing failed: ${e.message}")
         }
-    }
-
-    private fun buildMessageList(
-        systemPrompt: String,
-        sessionSummary: String,
-        userMessage: String,
-        conversationHistory: List<Message>
-    ): List<Message> {
-        val messages = mutableListOf<Message>()
-
-        if (systemPrompt.isNotBlank()) {
-            messages.add(
-                Message(
-                    role = "system",
-                    content = systemPrompt
-                )
-            )
-        }
-
-        if (sessionSummary.isNotBlank()) {
-            messages.add(
-                Message(
-                    role = "system",
-                    content = "Conversation summary:\n\n$sessionSummary"
-                )
-            )
-        }
-
-        messages.addAll(conversationHistory)
-        messages.add(Message(role = "user", content = userMessage))
-
-        return messages
     }
 }

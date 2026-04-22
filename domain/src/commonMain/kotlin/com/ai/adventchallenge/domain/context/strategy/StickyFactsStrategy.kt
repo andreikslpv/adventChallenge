@@ -5,46 +5,66 @@ import com.ai.adventchallenge.domain.context.ContextStrategy
 import com.ai.adventchallenge.domain.context.Facts
 import com.ai.adventchallenge.domain.context.FactsExtractor
 import com.ai.adventchallenge.domain.model.Message
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 class StickyFactsStrategy(
     private val settings: ContextSettings,
     private val factsExtractor: FactsExtractor
 ) : ContextStrategy {
     private var currentFacts = Facts()
+    private var lastProcessedMessageId = ""
 
-    override fun onUserMessage(message: Message) {
-    }
-
-    override fun onAssistantMessage(message: Message) {
-    }
-
-    override suspend fun buildContext(allMessages: List<Message>): List<Message> {
-        val lastUserMessage = allMessages.lastOrNull { it.role == "user" }
-        
-        if (lastUserMessage != null) {
-            currentFacts = factsExtractor.updateFacts(currentFacts, lastUserMessage.content)
+    override suspend fun onUserMessage(message: Message) {
+        if (message.id != lastProcessedMessageId) {
+            currentFacts = factsExtractor.updateFacts(currentFacts, message.content)
+            lastProcessedMessageId = message.id
         }
+    }
 
+    override suspend fun onAssistantMessage(message: Message) {
+    }
+
+    override fun buildContext(allMessages: List<Message>): List<Message> {
         val factsText = buildFactsString()
         val windowSize = settings.factsWindowSize
 
-        val messagesWithoutSummaries = allMessages.filterNot { it.isSummarized }
-        val recentMessages = if (messagesWithoutSummaries.size <= windowSize) {
-            messagesWithoutSummaries
+        val recentMessages = if (allMessages.size <= windowSize) {
+            allMessages
         } else {
-            messagesWithoutSummaries.takeLast(windowSize)
+            allMessages.takeLast(windowSize)
         }
 
-        val systemMessage = Message(
+        val factsSystemMessage = Message(
             role = "system",
             content = "Known facts:\n$factsText"
         )
 
-        return listOf(systemMessage) + recentMessages
+        return listOf(factsSystemMessage) + recentMessages
     }
 
     override fun reset() {
         currentFacts = Facts()
+        lastProcessedMessageId = ""
+    }
+
+    override fun serializeState(): String {
+        val state = StickyFactsState(
+            facts = currentFacts,
+            lastProcessedMessageId = lastProcessedMessageId
+        )
+        return json.encodeToString(state)
+    }
+
+    override fun restoreState(state: String?) {
+        if (state != null) {
+            try {
+                val parsed = json.decodeFromString<StickyFactsState>(state)
+                currentFacts = parsed.facts
+                lastProcessedMessageId = parsed.lastProcessedMessageId
+            } catch (_: Exception) {
+            }
+        }
     }
 
     private fun buildFactsString(): String {
@@ -56,5 +76,18 @@ class StickyFactsStrategy(
             currentFacts.requirements?.let { append("Requirements: $it\n") }
             currentFacts.other?.let { append("Other: $it\n") }
         }.ifEmpty { "No facts recorded yet." }
+    }
+
+    @Serializable
+    data class StickyFactsState(
+        val facts: Facts = Facts(),
+        val lastProcessedMessageId: String = ""
+    )
+
+    companion object {
+        private val json = Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
     }
 }

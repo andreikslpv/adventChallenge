@@ -12,5 +12,6 @@ data class Session(
     val summary: String = "",
     val contextSettings: ContextSettings = ContextSettings(
         strategy = ContextStrategyType.FULL_HISTORY
-    )
+    ),
+    val strategyStateJson: String = ""
 )

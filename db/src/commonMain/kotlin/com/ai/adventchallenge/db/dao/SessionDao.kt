@@ -24,6 +24,9 @@ interface SessionDao {
     @Query("UPDATE sessions SET contextSettingsJson = :contextSettingsJson WHERE id = :id")
     suspend fun updateSessionContextSettings(id: String, contextSettingsJson: String)
 
+    @Query("UPDATE sessions SET strategyStateJson = :strategyStateJson WHERE id = :id")
+    suspend fun updateStrategyState(id: String, strategyStateJson: String)
+
     @Query("DELETE FROM sessions WHERE id = :id")
     suspend fun deleteSession(id: String)
 

@@ -7,21 +7,30 @@ import com.ai.adventchallenge.domain.model.Message
 class SlidingWindowStrategy(
     private val settings: ContextSettings
 ) : ContextStrategy {
-    override fun onUserMessage(message: Message) {
+    override suspend fun onUserMessage(message: Message) {
     }
 
-    override fun onAssistantMessage(message: Message) {
+    override suspend fun onAssistantMessage(message: Message) {
     }
 
-    override suspend fun buildContext(allMessages: List<Message>): List<Message> {
-        val windowSize = settings.slidingWindowSize
-        return if (allMessages.size <= windowSize) {
-            allMessages
+    override fun buildContext(allMessages: List<Message>): List<Message> {
+        val systemMessages = allMessages.filter { it.role == "system" }
+        val nonSystemMessages = allMessages.filter { it.role != "system" }
+
+        val windowed = if (nonSystemMessages.size <= settings.slidingWindowSize) {
+            nonSystemMessages
         } else {
-            allMessages.takeLast(windowSize)
+            nonSystemMessages.takeLast(settings.slidingWindowSize)
         }
+
+        return systemMessages + windowed
     }
 
     override fun reset() {
+    }
+
+    override fun serializeState(): String? = null
+
+    override fun restoreState(state: String?) {
     }
 }
