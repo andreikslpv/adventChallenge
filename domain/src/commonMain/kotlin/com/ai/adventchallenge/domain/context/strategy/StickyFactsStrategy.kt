@@ -30,7 +30,7 @@ class StickyFactsStrategy(
         val factsText = buildFactsString()
         val windowSize = settings.factsWindowSize
 
-        val baseSystem = allMessages.firstOrNull { it.role == Role.SYSTEM }
+        val baseSystem = allMessages.lastOrNull { it.role == Role.SYSTEM }
         val nonSystemMessages = allMessages.filter { it.role != Role.SYSTEM }
 
         val recentMessages = if (nonSystemMessages.size <= windowSize) {

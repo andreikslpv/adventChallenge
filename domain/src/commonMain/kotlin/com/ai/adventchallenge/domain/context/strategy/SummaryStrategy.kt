@@ -35,13 +35,24 @@ class SummaryStrategy(
         }
 
         val nonSystemMessages = recentMessages.filter { it.role != Role.SYSTEM }
+        val baseSystem = allMessages.lastOrNull { it.role == Role.SYSTEM }
 
         return if (currentSummary.isNotEmpty()) {
-            val summaryMessage = Message(
+            val combinedSystemContent = buildString {
+                baseSystem?.content?.let {
+                    append(it)
+                    append("\n\n")
+                }
+                append("Previous conversation summary:\n")
+                append(currentSummary)
+            }
+            val systemMessage = Message(
                 role = Role.SYSTEM,
-                content = "Previous conversation summary:\n$currentSummary"
+                content = combinedSystemContent
             )
-            listOf(summaryMessage) + nonSystemMessages
+            listOf(systemMessage) + nonSystemMessages
+        } else if (baseSystem != null) {
+            listOf(baseSystem) + nonSystemMessages
         } else {
             nonSystemMessages
         }
