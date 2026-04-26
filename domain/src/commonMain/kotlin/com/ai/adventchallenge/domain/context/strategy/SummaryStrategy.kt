@@ -28,7 +28,8 @@ class SummaryStrategy(
 
     override fun buildContext(allMessages: List<Message>): List<Message> {
         val recentMessages = if (lastSummarizedMessageId != null) {
-            allMessages.dropWhile { it.id != lastSummarizedMessageId }.drop(1)
+            val index = allMessages.indexOfFirst { it.id == lastSummarizedMessageId }
+            if (index != -1) allMessages.drop(index + 1) else allMessages
         } else {
             allMessages
         }

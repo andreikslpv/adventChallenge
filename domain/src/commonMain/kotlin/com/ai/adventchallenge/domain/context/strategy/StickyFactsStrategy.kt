@@ -30,6 +30,7 @@ class StickyFactsStrategy(
         val factsText = buildFactsString()
         val windowSize = settings.factsWindowSize
 
+        val baseSystem = allMessages.firstOrNull { it.role == Role.SYSTEM }
         val nonSystemMessages = allMessages.filter { it.role != Role.SYSTEM }
 
         val recentMessages = if (nonSystemMessages.size <= windowSize) {
@@ -38,12 +39,21 @@ class StickyFactsStrategy(
             nonSystemMessages.takeLast(windowSize)
         }
 
-        val factsSystemMessage = Message(
+        val combinedSystemContent = buildString {
+            baseSystem?.content?.let {
+                append(it)
+                append("\n\n")
+            }
+            append("Known facts:\n")
+            append(factsText)
+        }
+
+        val systemMessage = Message(
             role = Role.SYSTEM,
-            content = "Known facts:\n$factsText"
+            content = combinedSystemContent
         )
 
-        return listOf(factsSystemMessage) + recentMessages
+        return listOf(systemMessage) + recentMessages
     }
 
     override fun reset() {
