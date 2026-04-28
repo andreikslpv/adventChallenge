@@ -32,6 +32,9 @@ class SessionRepositoryImpl(
     override suspend fun updateStrategyState(id: String, strategyStateJson: String) =
         sessionDataSource.updateStrategyState(id, strategyStateJson)
 
+    override suspend fun updateCurrentMessageId(id: String, currentMessageId: String) =
+        sessionDataSource.updateCurrentMessageId(id, currentMessageId)
+
     override suspend fun deleteSession(id: String) =
         sessionDataSource.deleteSession(id)
 

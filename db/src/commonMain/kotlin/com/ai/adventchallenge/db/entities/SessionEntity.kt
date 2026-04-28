@@ -12,5 +12,6 @@ data class SessionEntity(
     val selectedAgentId: String,
     val summary: String = "",
     val contextSettingsJson: String = "",
-    val strategyStateJson: String = ""
+    val strategyStateJson: String = "",
+    val currentMessageId: String? = null
 )

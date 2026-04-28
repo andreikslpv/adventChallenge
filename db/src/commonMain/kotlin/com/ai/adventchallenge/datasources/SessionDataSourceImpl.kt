@@ -44,6 +44,9 @@ class SessionDataSourceImpl(
     override suspend fun updateStrategyState(id: String, strategyStateJson: String) =
         sessionDao.updateStrategyState(id, strategyStateJson)
 
+    override suspend fun updateCurrentMessageId(id: String, currentMessageId: String) =
+        sessionDao.updateCurrentMessageId(id, currentMessageId)
+
     override suspend fun deleteSession(id: String) = sessionDao.deleteSession(id)
 
     override suspend fun deleteAllSessions() = sessionDao.deleteAllSessions()
@@ -75,7 +78,8 @@ private fun SessionEntity.toDomainSession(): Session {
         selectedAgentId = selectedAgentId,
         summary = summary,
         contextSettings = contextSettings,
-        strategyStateJson = strategyStateJson
+        strategyStateJson = strategyStateJson,
+        currentMessageId = currentMessageId
     )
 }
 
@@ -93,6 +97,7 @@ private fun Session.toEntity(): SessionEntity {
         selectedAgentId = selectedAgentId,
         summary = summary,
         contextSettingsJson = contextSettingsJson,
-        strategyStateJson = strategyStateJson
+        strategyStateJson = strategyStateJson,
+        currentMessageId = currentMessageId
     )
 }

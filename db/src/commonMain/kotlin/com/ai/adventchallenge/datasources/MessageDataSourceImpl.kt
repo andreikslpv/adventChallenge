@@ -21,10 +21,8 @@ class MessageDataSourceImpl(
             entity.toDomainMessage()
         }
 
-    override suspend fun getUnsummarizedMessages(sessionId: String, limit: Int): List<Message> =
-        messageDao.getUnsummarizedMessages(sessionId, limit).map { entity ->
-            entity.toDomainMessage()
-        }
+    override suspend fun getMessageById(messageId: String): Message? =
+        messageDao.getMessageById(messageId)?.toDomainMessage()
 
     override suspend fun insertMessage(message: Message, sessionId: String) {
         val entity = message.toEntity(sessionId)
@@ -35,9 +33,6 @@ class MessageDataSourceImpl(
         val entities = messages.map { it.toEntity(sessionId) }
         messageDao.insertMessages(entities)
     }
-
-    override suspend fun markMessagesAsSummarized(messageIds: List<String>) =
-        messageDao.markMessagesAsSummarized(messageIds)
 
     override suspend fun deleteMessagesBySessionId(sessionId: String) =
         messageDao.deleteMessagesBySessionId(sessionId)
@@ -52,6 +47,8 @@ class MessageDataSourceImpl(
 private fun MessageEntity.toDomainMessage(): Message {
     return Message(
         id = id,
+        sessionId = sessionId,
+        parentId = parentId,
         role = Role.entries.find { it.value() == role } ?: Role.USER,
         content = content,
         systemPrompt = systemPrompt ?: "",
@@ -59,8 +56,7 @@ private fun MessageEntity.toDomainMessage(): Message {
         characterCount = characterCount ?: 0,
         tokenCount = tokenCount ?: 0,
         outgoingTokenCount = outgoingTokenCount ?: 0,
-        timestamp = timestamp,
-        isSummarized = isSummarized
+        timestamp = timestamp
     )
 }
 
@@ -68,6 +64,7 @@ private fun Message.toEntity(sessionId: String): MessageEntity {
     return MessageEntity(
         id = id,
         sessionId = sessionId,
+        parentId = parentId,
         timestamp = timestamp,
         role = role.value(),
         content = content,
@@ -75,7 +72,6 @@ private fun Message.toEntity(sessionId: String): MessageEntity {
         agentId = agentId.ifEmpty { null },
         characterCount = if (characterCount > 0) characterCount else null,
         tokenCount = if (tokenCount > 0) tokenCount else null,
-        outgoingTokenCount = if (outgoingTokenCount > 0) outgoingTokenCount else null,
-        isSummarized = isSummarized
+        outgoingTokenCount = if (outgoingTokenCount > 0) outgoingTokenCount else null
     )
 }

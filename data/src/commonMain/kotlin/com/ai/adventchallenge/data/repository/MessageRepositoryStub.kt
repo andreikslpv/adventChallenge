@@ -15,11 +15,8 @@ class MessageRepositoryStub : MessageRepository {
     override suspend fun getMessagesBySessionIdSync(sessionId: String): List<Message> = 
         sessionMessages.value[sessionId] ?: emptyList()
 
-    override suspend fun getUnsummarizedMessages(
-        sessionId: String,
-        limit: Int
-    ): List<Message> {
-        return emptyList()
+    override suspend fun getMessageById(messageId: String): Message? {
+        return sessionMessages.value.values.flatten().find { it.id == messageId }
     }
 
     override suspend fun saveMessage(message: Message, sessionId: String) {
@@ -48,9 +45,6 @@ class MessageRepositoryStub : MessageRepository {
         }
         current[sessionId] = existingMessages
         sessionMessages.value = current
-    }
-
-    override suspend fun markMessagesAsSummarized(messageIds: List<String>) {
     }
 
     override suspend fun deleteMessagesBySessionId(sessionId: String) {

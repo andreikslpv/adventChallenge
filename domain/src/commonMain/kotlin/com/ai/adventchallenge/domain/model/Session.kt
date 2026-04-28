@@ -13,5 +13,6 @@ data class Session(
     val contextSettings: ContextSettings = ContextSettings(
         strategy = ContextStrategyType.FULL_HISTORY
     ),
-    val strategyStateJson: String = ""
+    val strategyStateJson: String = "",
+    val currentMessageId: String? = null
 )

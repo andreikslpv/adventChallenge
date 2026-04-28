@@ -5,6 +5,8 @@ import com.ai.adventchallenge.data.repository.AgentRepositoryImpl
 import com.ai.adventchallenge.data.repository.MessageRepositoryImpl
 import com.ai.adventchallenge.data.repository.SessionRepositoryImpl
 import com.ai.adventchallenge.data.service.AIServiceImpl
+import com.ai.adventchallenge.domain.context.BranchResolver
+import com.ai.adventchallenge.domain.context.BranchResolverImpl
 import com.ai.adventchallenge.domain.context.ContextStrategyFactory
 import com.ai.adventchallenge.domain.repository.AgentRepository
 import com.ai.adventchallenge.domain.repository.MessageRepository
@@ -39,7 +41,8 @@ val appModule = module {
     single { SummarizerAgent(get()) }
     single { FactsAgent(get()) }
     single { ContextStrategyFactory(get(), get()) }
-    single { ChatViewModel(get(), get(), get(), get(), get()) }
+    single<BranchResolver> { BranchResolverImpl(get()) }
+    single { ChatViewModel(get(), get(), get(), get(), get(), get()) }
 }
 
 expect val platformModule: Module

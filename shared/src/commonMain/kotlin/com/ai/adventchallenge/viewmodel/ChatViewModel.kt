@@ -2,6 +2,7 @@ package com.ai.adventchallenge.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ai.adventchallenge.domain.context.BranchResolver
 import com.ai.adventchallenge.domain.context.ContextSettings
 import com.ai.adventchallenge.domain.context.ContextStrategy
 import com.ai.adventchallenge.domain.context.ContextStrategyFactory
@@ -42,7 +43,8 @@ class ChatViewModel(
     private val agentRepository: AgentRepository,
     private val messageRepository: MessageRepository,
     private val sessionRepository: SessionRepository,
-    private val strategyFactory: ContextStrategyFactory
+    private val strategyFactory: ContextStrategyFactory,
+    private val branchResolver: BranchResolver
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         ChatUiState(
@@ -101,6 +103,17 @@ class ChatViewModel(
         val sessionId = _uiState.value.selectedSessionId
         if (sessionId.isNotEmpty() && state != null) {
             sessionRepository.updateStrategyState(sessionId, state)
+        }
+    }
+
+    private fun findCurrentSession(): Session? {
+        return _uiState.value.sessions.find { it.id == _uiState.value.selectedSessionId }
+    }
+
+    private suspend fun updateCurrentMessageId(messageId: String) {
+        val sessionId = _uiState.value.selectedSessionId
+        if (sessionId.isNotEmpty()) {
+            sessionRepository.updateCurrentMessageId(sessionId, messageId)
         }
     }
 
@@ -242,8 +255,11 @@ class ChatViewModel(
         if (userMessage.isBlank()) return
         viewModelScope.launch {
             val outgoingTokens = userMessage.length / 4
+            val session = findCurrentSession()
             val userMsg = Message(
                 id = Uuid.random().toString(),
+                sessionId = _uiState.value.selectedSessionId,
+                parentId = session?.currentMessageId,
                 role = Role.USER,
                 content = userMessage,
                 characterCount = userMessage.length,
@@ -257,6 +273,7 @@ class ChatViewModel(
 
             val sessionId = _uiState.value.selectedSessionId
             messageRepository.saveMessage(userMsg, sessionId)
+            updateCurrentMessageId(userMsg.id)
             currentStrategy?.onUserMessage(userMsg)
             persistStrategyState()
 
@@ -271,13 +288,15 @@ class ChatViewModel(
     private fun sendMessageToAgent(userMessage: String, agent: Agent) {
         val currentMessages = _uiState.value.messages.toMutableList()
         val outgoingTokens = userMessage.length / 4
+        val session = findCurrentSession()
         val userMsg = Message(
             id = Uuid.random().toString(),
+            sessionId = _uiState.value.selectedSessionId,
+            parentId = session?.currentMessageId,
             role = Role.USER,
             content = userMessage,
             characterCount = userMessage.length,
-            outgoingTokenCount = outgoingTokens,
-            isSummarized = false
+            outgoingTokenCount = outgoingTokens
         )
         currentMessages.add(userMsg)
         _uiState.value =
@@ -287,24 +306,24 @@ class ChatViewModel(
             val sessionId = _uiState.value.selectedSessionId
 
             messageRepository.saveMessage(userMsg, sessionId)
+            updateCurrentMessageId(userMsg.id)
 
             currentStrategy?.onUserMessage(userMsg)
             persistStrategyState()
 
-            val allMessages = messageRepository.getMessagesBySessionIdSync(sessionId)
-            val contextMessages = currentStrategy?.buildContext(allMessages) ?: allMessages
+            val branchMessages = branchResolver.buildBranch(session?.currentMessageId)
+            val contextMessages = currentStrategy?.buildContext(branchMessages) ?: branchMessages
 
-            val response = mainAgent.processRequest(agent, contextMessages)
-
-            when (response) {
+            when (val response = mainAgent.processRequest(agent, contextMessages)) {
                 is AgentResponse.Success -> {
                     val messageWithAgentInfo = response.message.copy(
                         id = response.message.id.ifEmpty { Uuid.random().toString() },
+                        sessionId = sessionId,
+                        parentId = userMsg.id,
                         systemPrompt = agent.settings.systemPrompt,
                         agentId = agent.id,
                         characterCount = response.message.content.length,
-                        tokenCount = response.tokenCount,
-                        isSummarized = false
+                        tokenCount = response.tokenCount
                     )
                     val updatedMessages = _uiState.value.messages + messageWithAgentInfo
                     _uiState.value = _uiState.value.copy(
@@ -314,6 +333,7 @@ class ChatViewModel(
 
                     updateSessionNameIfNeeded(userMessage)
                     messageRepository.saveMessage(messageWithAgentInfo, sessionId)
+                    updateCurrentMessageId(messageWithAgentInfo.id)
 
                     currentStrategy?.onAssistantMessage(messageWithAgentInfo)
                     persistStrategyState()
@@ -323,9 +343,9 @@ class ChatViewModel(
                         agentRepository.saveAgent(selectedAgent)
                     }
 
-                    val session = sessionRepository.getSessionById(sessionId)
-                    if (session != null && session.selectedAgentId != agent.id) {
-                        val newSession = session.copy(selectedAgentId = agent.id)
+                    val currentSession = sessionRepository.getSessionById(sessionId)
+                    if (currentSession != null && currentSession.selectedAgentId != agent.id) {
+                        val newSession = currentSession.copy(selectedAgentId = agent.id)
                         sessionRepository.saveSession(newSession)
                     }
                 }
@@ -341,18 +361,21 @@ class ChatViewModel(
     }
 
     private suspend fun sendRequestToAgent(agent: Agent, sessionId: String) {
-        val allMessages = messageRepository.getMessagesBySessionIdSync(sessionId)
-        val contextMessages = currentStrategy?.buildContext(allMessages) ?: allMessages
+        val session = sessionRepository.getSessionById(sessionId)
+        val branchMessages = branchResolver.buildBranch(session?.currentMessageId)
+        val contextMessages = currentStrategy?.buildContext(branchMessages) ?: branchMessages
 
         when (val response = mainAgent.processRequest(agent, contextMessages)) {
             is AgentResponse.Success -> {
+                val lastMessageId = session?.currentMessageId
                 val messageWithAgentInfo = response.message.copy(
                     id = response.message.id.ifEmpty { Uuid.random().toString() },
+                    sessionId = sessionId,
+                    parentId = lastMessageId,
                     systemPrompt = agent.settings.systemPrompt,
                     agentId = agent.id,
                     characterCount = response.message.content.length,
-                    tokenCount = response.tokenCount,
-                    isSummarized = false
+                    tokenCount = response.tokenCount
                 )
                 val currentMessages = _uiState.value.messages.toMutableList()
                 currentMessages.add(messageWithAgentInfo)
@@ -360,6 +383,7 @@ class ChatViewModel(
 
                 updateSessionNameIfNeeded(messageWithAgentInfo.content)
                 messageRepository.saveMessage(messageWithAgentInfo, sessionId)
+                updateCurrentMessageId(messageWithAgentInfo.id)
 
                 currentStrategy?.onAssistantMessage(messageWithAgentInfo)
                 persistStrategyState()
@@ -369,9 +393,9 @@ class ChatViewModel(
                     agentRepository.saveAgent(selectedAgent)
                 }
 
-                val session = sessionRepository.getSessionById(sessionId)
-                if (session != null && session.selectedAgentId != agent.id) {
-                    val newSession = session.copy(selectedAgentId = agent.id)
+                val currentSession = sessionRepository.getSessionById(sessionId)
+                if (currentSession != null && currentSession.selectedAgentId != agent.id) {
+                    val newSession = currentSession.copy(selectedAgentId = agent.id)
                     sessionRepository.saveSession(newSession)
                 }
             }
@@ -433,7 +457,8 @@ class ChatViewModel(
 
     private fun loadMessagesForSession(sessionId: String) {
         viewModelScope.launch {
-            val messages = messageRepository.getMessagesBySessionIdSync(sessionId)
+            val session = sessionRepository.getSessionById(sessionId)
+            val messages = branchResolver.buildBranch(session?.currentMessageId)
             _uiState.value = _uiState.value.copy(messages = messages)
         }
     }
@@ -452,6 +477,20 @@ class ChatViewModel(
                     selectedAgentId = agents.first().id
                 )
             }
+        }
+    }
+
+    fun switchBranch(messageId: String) {
+        val sessionId = _uiState.value.selectedSessionId
+        if (sessionId.isEmpty()) return
+
+        viewModelScope.launch {
+            sessionRepository.updateCurrentMessageId(sessionId, messageId)
+            currentStrategy?.reset()
+            sessionRepository.updateStrategyState(sessionId, "")
+
+            val messages = branchResolver.buildBranch(messageId)
+            _uiState.value = _uiState.value.copy(messages = messages)
         }
     }
 
