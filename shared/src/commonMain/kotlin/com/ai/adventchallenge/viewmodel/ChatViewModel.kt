@@ -311,7 +311,7 @@ class ChatViewModel(
             currentStrategy?.onUserMessage(userMsg)
             persistStrategyState()
 
-            val branchMessages = branchResolver.buildBranch(session?.currentMessageId)
+            val branchMessages = branchResolver.buildBranch(userMsg.id)
             val contextMessages = currentStrategy?.buildContext(branchMessages) ?: branchMessages
 
             when (val response = mainAgent.processRequest(agent, contextMessages)) {
