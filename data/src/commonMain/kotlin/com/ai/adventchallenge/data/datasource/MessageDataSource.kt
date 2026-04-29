@@ -7,6 +7,7 @@ interface MessageDataSource {
     fun getMessagesBySessionId(sessionId: String): Flow<List<Message>>
     suspend fun getMessagesBySessionIdSync(sessionId: String): List<Message>
     suspend fun getMessageById(messageId: String): Message?
+    suspend fun getMessagesByParentId(parentId: String): List<Message>
     suspend fun insertMessage(message: Message, sessionId: String)
     suspend fun insertMessages(messages: List<Message>, sessionId: String)
     suspend fun deleteMessagesBySessionId(sessionId: String)

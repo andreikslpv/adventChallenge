@@ -18,6 +18,9 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE id = :messageId")
     suspend fun getMessageById(messageId: String): MessageEntity?
 
+    @Query("SELECT * FROM messages WHERE parentId = :parentId ORDER BY timestamp ASC")
+    suspend fun getMessagesByParentId(parentId: String): List<MessageEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessage(message: MessageEntity)
 

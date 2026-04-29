@@ -42,6 +42,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,11 +51,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.adventchallenge.domain.model.Agent
+import com.ai.adventchallenge.domain.model.Message
 import com.ai.adventchallenge.platform.copyToClipboard
 import com.ai.adventchallenge.platform.getClipboardContext
 import com.ai.adventchallenge.ui.components.AgentsRow
+import com.ai.adventchallenge.ui.components.BranchSelectorDialog
 import com.ai.adventchallenge.ui.components.MessageBubble
 import com.ai.adventchallenge.viewmodel.ChatViewModel
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
@@ -73,6 +77,10 @@ fun ChatScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = getClipboardContext()
     var showSessionSettings by remember { mutableStateOf(false) }
+    var branchSelectorParentId by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    var alternativeBranches by remember { mutableStateOf<List<Message>>(emptyList()) }
 
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
@@ -121,7 +129,7 @@ fun ChatScreen(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Начать новую сессию")
+                    Text("New session")
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -131,6 +139,7 @@ fun ChatScreen(
                 ) {
                     items(uiState.sessions) { session ->
                         val isSelected = session.id == uiState.selectedSessionId
+                        val hasBranches = uiState.branchPoints.isNotEmpty() && session.id == uiState.selectedSessionId
                         val backgroundColor = if (isSelected) Color(0xFFE3F2FD) else Color.White
                         
                         Box(
@@ -153,12 +162,20 @@ fun ChatScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = session.name,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (hasBranches) {
+                                            Text(
+                                                text = "\uD83C\uDF3F ",
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                        Text(
+                                            text = session.name,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = formatTimestamp(session.createdAt),
@@ -171,7 +188,7 @@ fun ChatScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
-                                        contentDescription = "Удалить сессию",
+                                        contentDescription = "Delete session",
                                         tint = Color.Gray
                                     )
                                 }
@@ -204,6 +221,10 @@ fun ChatScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
+                    val currentBranchIds = remember(uiState.messages) {
+                        uiState.messages.map { it.id }.toSet()
+                    }
+
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
@@ -211,12 +232,26 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(uiState.messages) { message ->
+                            val childCount = uiState.branchPoints[message.id] ?: 0
                             MessageBubble(
                                 message = message,
                                 agent = uiState.agents.find { it.id == message.agentId },
+                                branchChildCount = childCount,
+                                isBranchPoint = childCount > 1,
                                 onLongPress = { text ->
                                     copyToClipboard(text, context)
-                                }
+                                },
+                                onReplyFromHere = {
+                                    viewModel.switchBranch(message.id)
+                                },
+                                onShowBranches = if (childCount > 1) {
+                                    {
+                                        scope.launch {
+                                            alternativeBranches = viewModel.getAlternativeBranches(message.id)
+                                            branchSelectorParentId = message.id
+                                        }
+                                    }
+                                } else null
                             )
                         }
                     }
@@ -260,7 +295,7 @@ fun ChatScreen(
                             value = inputText,
                             onValueChange = { inputText = it },
                             modifier = Modifier.weight(1f),
-                            placeholder = { Text("Введите сообщение...") },
+                            placeholder = { Text("Enter message...") },
                             enabled = !uiState.isLoading && !uiState.isSendingToAll && uiState.selectedAgentId.isNotEmpty()
                         )
 
@@ -274,7 +309,7 @@ fun ChatScreen(
                                 },
                                 enabled = inputText.isNotBlank() && !uiState.isLoading && !uiState.isSendingToAll && uiState.selectedAgentId.isNotEmpty()
                             ) {
-                                Text("Всем")
+                                Text("All")
                             }
                         }
 
@@ -287,7 +322,7 @@ fun ChatScreen(
                             },
                             enabled = inputText.isNotBlank() && !uiState.isLoading && !uiState.isSendingToAll && uiState.selectedAgentId.isNotEmpty()
                         ) {
-                            Text("📤")
+                            Text("Отправить")
                         }
                     }
                 }
@@ -302,6 +337,25 @@ fun ChatScreen(
             onDismiss = { showSessionSettings = false },
             onSettingsChanged = { settings ->
                 viewModel.updateSessionContextSettings(settings)
+            }
+        )
+    }
+
+    if (branchSelectorParentId != null) {
+        BranchSelectorDialog(
+            branches = alternativeBranches,
+            currentBranchMessageIds = remember(uiState.messages, alternativeBranches) {
+                val currentIds = uiState.messages.map { it.id }.toSet()
+                currentIds
+            },
+            onSelectBranch = { messageId ->
+                viewModel.switchBranch(messageId)
+                branchSelectorParentId = null
+                alternativeBranches = emptyList()
+            },
+            onDismiss = {
+                branchSelectorParentId = null
+                alternativeBranches = emptyList()
             }
         )
     }

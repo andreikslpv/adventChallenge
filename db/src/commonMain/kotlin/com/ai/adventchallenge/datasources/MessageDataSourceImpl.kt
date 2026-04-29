@@ -24,6 +24,9 @@ class MessageDataSourceImpl(
     override suspend fun getMessageById(messageId: String): Message? =
         messageDao.getMessageById(messageId)?.toDomainMessage()
 
+    override suspend fun getMessagesByParentId(parentId: String): List<Message> =
+        messageDao.getMessagesByParentId(parentId).map { it.toDomainMessage() }
+
     override suspend fun insertMessage(message: Message, sessionId: String) {
         val entity = message.toEntity(sessionId)
         messageDao.insertMessage(entity)

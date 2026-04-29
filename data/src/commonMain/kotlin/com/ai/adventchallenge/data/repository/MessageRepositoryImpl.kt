@@ -17,6 +17,9 @@ class MessageRepositoryImpl(
     override suspend fun getMessageById(messageId: String): Message? =
         messageDataSource.getMessageById(messageId)
 
+    override suspend fun getMessagesByParentId(parentId: String): List<Message> =
+        messageDataSource.getMessagesByParentId(parentId)
+
     override suspend fun saveMessage(message: Message, sessionId: String) {
         messageDataSource.insertMessage(message, sessionId)
     }

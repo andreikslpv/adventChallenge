@@ -19,6 +19,10 @@ class MessageRepositoryStub : MessageRepository {
         return sessionMessages.value.values.flatten().find { it.id == messageId }
     }
 
+    override suspend fun getMessagesByParentId(parentId: String): List<Message> {
+        return sessionMessages.value.values.flatten().filter { it.parentId == parentId }
+    }
+
     override suspend fun saveMessage(message: Message, sessionId: String) {
         val current = sessionMessages.value.toMutableMap()
         val messages = current[sessionId]?.toMutableList() ?: mutableListOf()

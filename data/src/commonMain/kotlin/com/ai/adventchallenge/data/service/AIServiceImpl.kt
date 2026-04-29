@@ -3,6 +3,7 @@ package com.ai.adventchallenge.data.service
 import com.ai.adventchallenge.data.api.ZaiApiService
 import com.ai.adventchallenge.domain.model.AIModel
 import com.ai.adventchallenge.domain.model.Message
+import com.ai.adventchallenge.domain.model.Role
 import com.ai.adventchallenge.domain.service.AIService
 import com.ai.adventchallenge.domain.model.AIProvider as DomainAIProvider
 import com.ai.adventchallenge.data.api.AIProvider as DataAIProvider
@@ -50,8 +51,7 @@ private fun Message.toDataChatMessage() = DataChatMessage(
 
 private fun DataChatMessage.toDomainMessage() = Message(
     id = id,
-    role = com.ai.adventchallenge.domain.model.Role.entries.find { it.value() == role }
-        ?: com.ai.adventchallenge.domain.model.Role.USER,
+    role = Role.entries.find { it.value() == role } ?: Role.USER,
     content = content,
     timestamp = timestamp,
     systemPrompt = systemPrompt,

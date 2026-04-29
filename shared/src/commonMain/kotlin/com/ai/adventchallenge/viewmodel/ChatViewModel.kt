@@ -34,7 +34,8 @@ data class ChatUiState(
     val savedAgents: List<Agent> = emptyList(),
     val showAgentSelector: Boolean = false,
     val sessions: List<Session> = emptyList(),
-    val selectedSessionId: String = ""
+    val selectedSessionId: String = "",
+    val branchPoints: Map<String, Int> = emptyMap()
 )
 
 @OptIn(ExperimentalUuidApi::class)
@@ -459,8 +460,27 @@ class ChatViewModel(
         viewModelScope.launch {
             val session = sessionRepository.getSessionById(sessionId)
             val messages = branchResolver.buildBranch(session?.currentMessageId)
-            _uiState.value = _uiState.value.copy(messages = messages)
+            val branchPoints = computeBranchPoints(sessionId)
+            _uiState.value = _uiState.value.copy(
+                messages = messages,
+                branchPoints = branchPoints
+            )
         }
+    }
+
+    private suspend fun computeBranchPoints(sessionId: String): Map<String, Int> {
+        val allMessages = messageRepository.getMessagesBySessionIdSync(sessionId)
+        val childrenCount = mutableMapOf<String, Int>()
+        for (msg in allMessages) {
+            msg.parentId?.let { parentId ->
+                childrenCount[parentId] = (childrenCount[parentId] ?: 0) + 1
+            }
+        }
+        return childrenCount.filter { it.value > 1 }
+    }
+
+    suspend fun getAlternativeBranches(messageId: String): List<Message> {
+        return messageRepository.getMessagesByParentId(messageId)
     }
 
     private fun loadAgentsForSession(sessionId: String) {
@@ -490,7 +510,11 @@ class ChatViewModel(
             sessionRepository.updateStrategyState(sessionId, "")
 
             val messages = branchResolver.buildBranch(messageId)
-            _uiState.value = _uiState.value.copy(messages = messages)
+            val branchPoints = computeBranchPoints(sessionId)
+            _uiState.value = _uiState.value.copy(
+                messages = messages,
+                branchPoints = branchPoints
+            )
         }
     }
 
