@@ -37,11 +37,12 @@ fun SessionSettingsDialog(
     onDismiss: () -> Unit,
     onSettingsChanged: (ContextSettings) -> Unit
 ) {
-    var selectedStrategy by remember { mutableStateOf(session.contextSettings.strategy) }
+    val settings = session.contextSettings
+    var selectedStrategy by remember(settings) { mutableStateOf(settings.strategy) }
 
-    var slidingWindowSize by remember { mutableStateOf(TextFieldValue(session.contextSettings.slidingWindowSize.toString())) }
-    var factsWindowSize by remember { mutableStateOf(TextFieldValue(session.contextSettings.factsWindowSize.toString())) }
-    var summaryTriggerSize by remember { mutableStateOf(TextFieldValue(session.contextSettings.summaryTriggerSize.toString())) }
+    var slidingWindowSize by remember(settings) { mutableStateOf(TextFieldValue(settings.slidingWindowSize.toString())) }
+    var factsWindowSize by remember(settings) { mutableStateOf(TextFieldValue(settings.factsWindowSize.toString())) }
+    var summaryTriggerSize by remember(settings) { mutableStateOf(TextFieldValue(settings.summaryTriggerSize.toString())) }
 
     Dialog(
         onDismissRequest = onDismiss,

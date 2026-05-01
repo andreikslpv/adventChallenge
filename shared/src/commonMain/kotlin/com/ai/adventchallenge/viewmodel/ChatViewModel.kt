@@ -232,6 +232,12 @@ class ChatViewModel(
     fun updateSessionContextSettings(settings: ContextSettings) {
         val sessionId = _uiState.value.selectedSessionId
         if (sessionId.isNotEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                sessions = _uiState.value.sessions.map {
+                    if (it.id == sessionId) it.copy(contextSettings = settings, strategyStateJson = "")
+                    else it
+                }
+            )
             viewModelScope.launch {
                 sessionRepository.updateSessionContextSettings(sessionId, settings)
                 sessionRepository.updateStrategyState(sessionId, "")

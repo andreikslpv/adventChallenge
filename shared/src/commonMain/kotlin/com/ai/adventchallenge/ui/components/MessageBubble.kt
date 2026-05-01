@@ -18,7 +18,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -109,45 +109,85 @@ fun MessageBubble(
                             text = displayContent,
                             color = contentColor
                         )
-                        if (isUser && (message.characterCount > 0 || message.outgoingTokenCount > 0)) {
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                if (message.outgoingTokenCount > 0) {
-                                    Text(
-                                        text = "Исходящие: ${message.outgoingTokenCount} токенов",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = contentColor.copy(alpha = 0.7f)
-                                    )
-                                }
-                                if (message.characterCount > 0) {
-                                    Text(
-                                        text = "${message.characterCount} символов",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = contentColor.copy(alpha = 0.7f)
-                                    )
-                                }
-                            }
+                        val hasStats = if (isUser) {
+                            message.characterCount > 0 || message.outgoingTokenCount > 0
+                        } else {
+                            message.characterCount > 0 || message.tokenCount > 0
                         }
-                        if (!isUser && (message.characterCount > 0 || message.tokenCount > 0)) {
+
+                        if (hasStats || onReplyFromHere != null) {
                             Spacer(modifier = Modifier.size(8.dp))
                             Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                if (message.characterCount > 0) {
-                                    Text(
-                                        text = "${message.characterCount} символов",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = contentColor.copy(alpha = 0.7f)
-                                    )
+                                if (isUser) {
+                                    if (message.outgoingTokenCount > 0) {
+                                        Text(
+                                            text = "Исходящие: ${message.outgoingTokenCount} токенов",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = contentColor.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                    if (message.characterCount > 0) {
+                                        Text(
+                                            text = "${message.characterCount} символов",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = contentColor.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                } else {
+                                    if (message.characterCount > 0) {
+                                        Text(
+                                            text = "${message.characterCount} символов",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = contentColor.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                    if (message.tokenCount > 0) {
+                                        Text(
+                                            text = "${message.tokenCount} токенов",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = contentColor.copy(alpha = 0.7f)
+                                        )
+                                    }
                                 }
-                                if (message.tokenCount > 0) {
-                                    Text(
-                                        text = "${message.tokenCount} токенов",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = contentColor.copy(alpha = 0.7f)
-                                    )
+
+                                if (onReplyFromHere != null) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clickable { showMenu = true },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = "Actions",
+                                            modifier = Modifier.size(16.dp),
+                                            tint = contentColor
+                                        )
+                                        DropdownMenu(
+                                            expanded = showMenu,
+                                            onDismissRequest = { showMenu = false }
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Reply from here") },
+                                                onClick = {
+                                                    showMenu = false
+                                                    onReplyFromHere()
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.AutoMirrored.Filled.Reply,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -155,43 +195,6 @@ fun MessageBubble(
                 }
             }
 
-            if (onReplyFromHere != null) {
-                Box(
-                    modifier = Modifier
-                        .align(if (isUser) Alignment.TopStart else Alignment.TopEnd)
-                ) {
-                    IconButton(
-                        onClick = { showMenu = true },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "Actions",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Reply from here") },
-                            onClick = {
-                                showMenu = false
-                                onReplyFromHere()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.Reply,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        )
-                    }
-                }
-            }
         }
 
         if (branchChildCount > 1 && onShowBranches != null) {
