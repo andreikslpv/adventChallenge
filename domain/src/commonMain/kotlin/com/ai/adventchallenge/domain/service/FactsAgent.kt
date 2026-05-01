@@ -15,40 +15,67 @@ class FactsAgent(
     private val aiService: AIService
 ) : FactsExtractor {
     companion object {
-        private const val SYSTEM_PROMPT = "You are an AI agent responsible for maintaining structured memory of a conversation.\n" +
-            "Your task is to update a JSON object called \"facts\" based on a new user message.\n\n" +
-            "STRICT RULES:\n\n" +
-            "1. Output MUST be valid raw JSON only\n" +
-            "   - Do NOT wrap in markdown\n" +
-            "   - Do NOT use ```json or ```\n" +
-            "   - Do NOT add explanations\n\n" +
-            "2. Preserve existing facts unless explicitly changed\n" +
-            "   - If the new message refines a goal -> UPDATE it\n" +
-            "   - If it is unrelated -> KEEP previous value\n\n" +
-            "3. Extract only stable information:\n" +
-            "   - goal\n" +
-            "   - constraints\n" +
-            "   - preferences\n" +
-            "   - decisions\n" +
-            "   - requirements\n\n" +
-            "4. Never invent data\n\n" +
-            "5. If no new info for a field -> keep previous value\n\n" +
-            "6. If user contradicts previous info -> replace it"
+        private const val SYSTEM_PROMPT =
+            "You are an AI agent responsible for maintaining structured memory of a conversation.\n" +
+                    "Your task is to update a JSON object called \"facts\" based on a new user message.\n\n" +
 
-        private const val USER_PROMPT_TEMPLATE = "Current facts:\n{FACTS_JSON}\n\n" +
-            "New user message:\n{USER_MESSAGE}\n\n" +
-            "Update the facts JSON. Return EXACTLY this structure with updated values:\n\n" +
-            "{\n" +
-            "  \"goal\": \"...\",\n" +
-            "  \"constraints\": \"...\",\n" +
-            "  \"preferences\": \"...\",\n" +
-            "  \"decisions\": \"...\",\n" +
-            "  \"requirements\": \"...\",\n" +
-            "  \"other\": \"...\"\n" +
-            "}"
+                    "STRICT RULES:\n\n" +
+
+                    "1. Output MUST be valid raw JSON only\n" +
+                    "   - Do NOT wrap in markdown\n" +
+                    "   - Do NOT use ```json or ```\n" +
+                    "   - Do NOT add explanations\n\n" +
+
+                    "2. Preserve existing facts unless explicitly changed\n" +
+                    "   - If the new message refines a goal -> UPDATE it\n" +
+                    "   - If it is unrelated -> KEEP previous value\n\n" +
+
+                    "3. Extract only stable information\n\n" +
+
+                    "4. Never invent data\n\n" +
+
+                    "5. If no new info for a field -> keep previous value\n\n" +
+
+                    "6. If user contradicts previous info -> replace it\n\n" +
+
+                    "7. Prefer consistency with existing field assignments unless there is strong evidence to change category\n\n" +
+
+                    "8. CLASSIFICATION RULES:\n" +
+                    "   - constraints: MUST-have conditions, limitations, restrictions (keywords: must, need, limit, only, no more than)\n" +
+                    "   - preferences: NICE-to-have wishes or style (keywords: prefer, would like, ideally, nice to have)\n" +
+                    "   - If unsure -> classify as constraints\n\n" +
+
+                    "9. GOAL UPDATE RULE:\n" +
+                    "   - If new goal is a refinement of previous goal -> merge into a more specific goal\n" +
+                    "   - If new goal is a different direction -> replace it\n\n" +
+
+                    "10. DISTINGUISH:\n" +
+                    "   - goal = high-level objective\n" +
+                    "   - requirements = concrete features or capabilities" +
+
+                    " FIELD DEFINITIONS:\n\n" +
+                    "- goal: the main objective the user wants to achieve\n" +
+                    "- constraints: limitations, restrictions, or conditions (must-have)\n" +
+                    "- preferences: nice-to-have or stylistic wishes\n" +
+                    "- decisions: choices already made\n" +
+                    "- requirements: functional or technical must-have features\n"
+
+        private const val USER_PROMPT_TEMPLATE =
+            "Current facts:\n{FACTS_JSON}\n\n" +
+                    "New user message:\n{USER_MESSAGE}\n\n" +
+                    "Important: Do not remove existing values unless the new message clearly contradicts them.\n\n" +
+                    "Update the facts JSON. Return EXACTLY this structure with updated values:\n\n" +
+                    "{\n" +
+                    "  \"goal\": \"...\",\n" +
+                    "  \"constraints\": \"...\",\n" +
+                    "  \"preferences\": \"...\",\n" +
+                    "  \"decisions\": \"...\",\n" +
+                    "  \"requirements\": \"...\",\n" +
+                    "  \"other\": \"...\"\n" +
+                    "}"
 
         private val FACTS_MODEL = AIModel.AVAILABLE_MODELS[1]
-        
+
         private val json = Json {
             ignoreUnknownKeys = true
             isLenient = true
@@ -122,7 +149,7 @@ class FactsAgent(
         val trimmed = response.trim()
         val firstBrace = trimmed.indexOf('{')
         val lastBrace = trimmed.lastIndexOf('}')
-        
+
         return if (firstBrace != -1 && lastBrace != -1 && lastBrace > firstBrace) {
             trimmed.substring(firstBrace, lastBrace + 1)
         } else {
