@@ -6,6 +6,7 @@ import com.ai.adventchallenge.domain.context.BranchResolver
 import com.ai.adventchallenge.domain.context.ContextSettings
 import com.ai.adventchallenge.domain.context.ContextStrategy
 import com.ai.adventchallenge.domain.context.ContextStrategyFactory
+import com.ai.adventchallenge.domain.context.ContextStrategyType
 import com.ai.adventchallenge.domain.model.Agent
 import com.ai.adventchallenge.domain.model.AgentResponse
 import com.ai.adventchallenge.domain.model.AgentSettings
@@ -58,6 +59,8 @@ class ChatViewModel(
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     private var currentStrategy: ContextStrategy? = null
+    private var currentStrategyType: ContextStrategyType? = null
+    private var currentStrategySessionId: String = ""
 
     init {
         loadSavedAgents()
@@ -92,9 +95,20 @@ class ChatViewModel(
         }
     }
 
-    private fun updateStrategy(settings: ContextSettings, stateJson: String? = null) {
+    private fun updateStrategy(settings: ContextSettings, stateJson: String? = null, forceNew: Boolean = false) {
+        val sessionId = _uiState.value.selectedSessionId
+
+        if (!forceNew && currentStrategy != null
+            && currentStrategyType == settings.strategy
+            && currentStrategySessionId == sessionId
+        ) {
+            return
+        }
+
         currentStrategy = strategyFactory.create(settings)
-        if (stateJson != null) {
+        currentStrategyType = settings.strategy
+        currentStrategySessionId = sessionId
+        if (!stateJson.isNullOrBlank()) {
             currentStrategy?.restoreState(stateJson)
         }
     }
@@ -241,7 +255,7 @@ class ChatViewModel(
             viewModelScope.launch {
                 sessionRepository.updateSessionContextSettings(sessionId, settings)
                 sessionRepository.updateStrategyState(sessionId, "")
-                updateStrategy(settings, null)
+                updateStrategy(settings, null, forceNew = true)
             }
         }
     }
@@ -281,6 +295,7 @@ class ChatViewModel(
             val sessionId = _uiState.value.selectedSessionId
             messageRepository.saveMessage(userMsg, sessionId)
             updateCurrentMessageId(userMsg.id)
+
             currentStrategy?.onUserMessage(userMsg)
             persistStrategyState()
 
@@ -435,7 +450,7 @@ class ChatViewModel(
         viewModelScope.launch {
             val session = sessionRepository.getSessionById(sessionId)
             if (session != null) {
-                updateStrategy(session.contextSettings, session.strategyStateJson)
+                updateStrategy(session.contextSettings, session.strategyStateJson, forceNew = true)
                 _uiState.value = _uiState.value.copy(
                     selectedSessionId = sessionId,
                     selectedAgentId = session.selectedAgentId.ifEmpty { _uiState.value.selectedAgentId }

@@ -20,6 +20,7 @@ class StickyFactsStrategy(
         if (message.id != lastProcessedMessageId) {
             currentFacts = factsExtractor.updateFacts(currentFacts, message.content)
             lastProcessedMessageId = message.id
+            println("[StickyFacts] Updated facts: $currentFacts")
         }
     }
 
@@ -28,6 +29,7 @@ class StickyFactsStrategy(
 
     override fun buildContext(allMessages: List<Message>): List<Message> {
         val factsText = buildFactsString()
+        println("[StickyFacts] buildContext — factsText: $factsText")
         val windowSize = settings.factsWindowSize
 
         val baseSystem = allMessages.lastOrNull { it.role == Role.SYSTEM }
@@ -70,13 +72,15 @@ class StickyFactsStrategy(
     }
 
     override fun restoreState(state: String?) {
-        if (state != null) {
-            try {
-                val parsed = json.decodeFromString<StickyFactsState>(state)
-                currentFacts = parsed.facts
-                lastProcessedMessageId = parsed.lastProcessedMessageId
-            } catch (_: Exception) {
-            }
+        if (state.isNullOrBlank()) return
+
+        try {
+            val parsed = json.decodeFromString<StickyFactsState>(state)
+            currentFacts = parsed.facts
+            lastProcessedMessageId = parsed.lastProcessedMessageId
+            println("[StickyFacts] Restored facts: $currentFacts")
+        } catch (e: Exception) {
+            println("[StickyFacts] Failed to restore state: ${e.message}")
         }
     }
 
